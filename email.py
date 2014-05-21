@@ -70,3 +70,4 @@ class EmailConfirmationMixin(models.Model):
         context['user'] = user
         context['emailConfirmation'] = self
         sendEmail(user.email, subject, template, context)
+#testing
