@@ -15,12 +15,6 @@ def sendEmail(to, subject, template_file, context_dict, sender=settings.DEFAULT_
         to = [to]
     context_dict['site'] = Site.objects.get_current()
     email_html = render_to_string(template_file, context_dict)
-    
-    #no usando EmailMultiAlternatives 
-    #email = EmailMultiAlternatives(subject, 'necesitas un cliente de correo html para ver este mail', sender, to)
-    #email.attach_alternative(email_html, "text/html")
-    #sino EmailMessage
     email = EmailMessage(subject, email_html, sender, to)
     email.content_subtype = "html"  # Main content is now text/html
-
     email.send(fail_silently=False)
