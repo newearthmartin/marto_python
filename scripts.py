@@ -1,12 +1,12 @@
 import os
 from optparse import OptionParser
 
-def djangoCommandline():    
-    defaultModule = None
-    try:
-        defaultModule = os.environ['DJANGO_SETTINGS_MODULE']
-    except KeyError:
-        pass
+def djangoCommandline(defaultModule=None):
+    if not defaultModule:
+        try:
+            defaultModule = os.environ['DJANGO_SETTINGS_MODULE']
+        except KeyError:
+            pass
     
     usage = "usage: %prog -s SETTINGS | --settings=SETTINGS"
     parser = OptionParser(usage)

@@ -1,28 +1,38 @@
-# encoding: utf-8
-
 import random
-from django.conf import settings
+from django import forms
 from django.db import models
 from django.utils.crypto import get_random_string
-from django.core.validators import email_re
-from marto_python.util import isListOrTuple
-from django.template.loader import render_to_string
-from django.core.mail.message import EmailMultiAlternatives
-from django.contrib.sites.models import Site
+from django.contrib.admin.options import ModelAdmin
+from django.contrib.admin.widgets import AdminTextInputWidget
+from marto_python.email import sendEmail
+from tinymce.widgets import TinyMCE
 
 random.seed()
 
-def isEmail(email_str):
-    return True if email_re.match(email_str) else False
+# Create your models here.
+class EmailMessage(models.Model):
+    from_email  = models.EmailField(null=False, blank=False)
+    to          = models.TextField(null=True, blank=True) #comma separated list of recipients
+    cc          = models.TextField(null=True, blank=True) #comma separated list of recipients
+    bcc         = models.TextField(null=True, blank=True) #comma separated list of recipients
+    subject     = models.CharField(max_length=255, null=True, blank=True)
+    body        = models.TextField(null=True, blank=True)
+    def __unicode__(self):
+        return self.subject
+    class AdminForm(forms.ModelForm):
+        class Meta:
+            widgets = {
+                'to': AdminTextInputWidget,
+                'cc': AdminTextInputWidget,
+                'bcc': AdminTextInputWidget,
+                'body': TinyMCE(attrs={'cols': 120, 'rows': 50}),
+            }
+class EmailMessageAdmin(ModelAdmin):
+    form = EmailMessage.AdminForm
+    list_display = ['to', 'subject']
+    list_filter = ['to', 'subject']
+    search_fields = ['from_email', 'to', 'cc', 'bcc', 'subject', 'body']
 
-def sendEmail(to, subject, template_file, context_dict, sender=settings.DEFAULT_FROM_EMAIL):
-    if not isListOrTuple(to):
-        to = [to]
-    context_dict['site'] = Site.objects.get_current()
-    email_html = render_to_string(template_file, context_dict)
-    email = EmailMultiAlternatives(subject, 'necesitas un cliente de correo html para ver este mail', sender, to)            
-    email.attach_alternative(email_html, "text/html")
-    email.send(fail_silently=False)
 
 #for mixing into the UserProfile model
 class EmailConfirmationMixin(models.Model):
@@ -61,7 +71,6 @@ class EmailConfirmationMixin(models.Model):
             return True
         else:
             return False
-        
     #does not generate key
     def sendEmailConfirmation(self, subject, template, context=None):
         if context is None:
@@ -70,4 +79,4 @@ class EmailConfirmationMixin(models.Model):
         context['user'] = user
         context['emailConfirmation'] = self
         sendEmail(user.email, subject, template, context)
-#testing
+
