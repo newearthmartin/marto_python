@@ -1,6 +1,9 @@
+# encoding: utf-8
+
 import math
 import os
 import urllib
+import importlib
 import time,datetime
 from string import atoi
 from django.conf import settings
@@ -9,7 +12,6 @@ from django.template.loader import render_to_string
 from django.core.mail.message import EmailMultiAlternatives
 from Crypto.Cipher import DES
 import base64
-
 
 class ErrorCode:
     def __init__(self, code, message):
@@ -157,3 +159,35 @@ def staffEmails():
 def isListOrTuple(x):
     return isinstance(x, (list,tuple))
 
+def toCommaSeparatedString(list):
+    if not list:
+        return ''
+    s = ''
+    i = 0
+    for e in list:
+        if i != 0:
+            s += ','
+        i += 1
+        s += str(e)
+    return s
+
+
+def load_class(full_class_string):
+    """
+    dynamically load a class from a string
+    """
+    class_data = full_class_string.split(".")
+    module_path = ".".join(class_data[:-1])
+    class_str = class_data[-1]
+
+    module = importlib.import_module(module_path)
+    # Finally, we retrieve the Class
+    return getattr(module, class_str)
+
+def setting(property_name, default=None):
+    try:
+        val = getattr(settings, property_name)
+    except:
+        print 'WARNING:', property_name, ' not found in settings module'
+        val = default
+    return val
