@@ -1,10 +1,15 @@
 import os
 from optparse import OptionParser
 
-def djangoCommandline(defaultModule=None):
-    if not defaultModule:
+def django_command_line(default_module=None):
+    ''' 
+    use this method in any command line script that uses django settings
+    call this method first thing before importing any other django stuff 
+    to configure the settings
+    '''
+    if not default_module:
         try:
-            defaultModule = os.environ['DJANGO_SETTINGS_MODULE']
+            default_module = os.environ['DJANGO_SETTINGS_MODULE']
         except KeyError:
             pass
     
@@ -16,9 +21,9 @@ def djangoCommandline(defaultModule=None):
     
     module = options.settings
     if not options.settings:
-        if defaultModule:
+        if default_module:
             print 'Using already defined DJANGO_SETTINGS_MODULE'
-            module = defaultModule
+            module = default_module
         else:
             parser.error("You must specify a settings module")
     
