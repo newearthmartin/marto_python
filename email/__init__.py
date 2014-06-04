@@ -1,13 +1,19 @@
 # encoding: utf-8
-from django.core.validators import email_re
+from django.core.validators import EmailValidator
 from marto_python.util import isListOrTuple
 from django.template.loader import render_to_string
 from django.core.mail.message import EmailMessage
 from django.contrib.sites.models import Site
 from django.conf import settings
 
+email_validator = EmailValidator()
+
 def isEmail(email_str):
-    return True if email_re.match(email_str) else False
+    try:
+        email_validator(email_str)
+        return True
+    except:
+        return False
 
 #if sender is None, will use DEFAULT_FROM_EMAIL from settings
 def sendEmail(to, subject, template_file, context_dict, sender=settings.DEFAULT_FROM_EMAIL):
