@@ -191,3 +191,14 @@ def setting(property_name, default=None):
         print 'WARNING:', property_name, ' not found in settings module'
         val = default
     return val
+
+#TODO: parametrizar en settings
+def is_site_view(path):
+    if path.startswith(settings.MEDIA_URL) or path.startswith(settings.STATIC_URL):
+        return False
+    elif path.startswith('/admin'):
+        return False
+    elif path.startswith('/calendar'):
+        return False
+    else:
+        return True
