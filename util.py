@@ -8,8 +8,6 @@ import time,datetime
 from string import atoi
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.template.loader import render_to_string
-from django.core.mail.message import EmailMultiAlternatives
 from Crypto.Cipher import DES
 import base64
 
@@ -20,10 +18,10 @@ class ErrorCode:
     code = 0
     message = None
 
-def addMessage(request, message):
-    addListElem(request.session, 'messages', message)
+def add_message(request, message):
+    add_list_elem(request.session, 'messages', message)
 
-def addListElem(d, key, elem):
+def add_list_elem(d, key, elem):
     if d.has_key(key) and d[key] is not None:
         d[key].append(elem)
     else:
@@ -44,26 +42,31 @@ def urldecode(string):
     return ret
 
 cipher=DES.new(settings.SECRET_KEY[0:8], DES.MODE_ECB)
-#encrypts and encodes into base16
-#the string must not contain trailing spaces (cause we need to add trailing spaces to have len % 8 = 0)
-def encryptAndEncode(string):
+
+def encrypt_and_encode(string):
+    '''
+    encrypts and encodes into base16
+    the string must not contain trailing spaces (cause we need to add trailing spaces to have len % 8 = 0)
+    '''
     while len(string) % 8 != 0:
         string += ' '
     encrypted = cipher.encrypt(string)
     return base64.b16encode(encrypted)
 
-def decodeAndDecrypt(string):
+def decode_and_decrypt(string):
     encrypted = base64.b16decode(string)
     return cipher.decrypt(encrypted).strip()
 
 
-def trimDigits(num, digits):
-    digitTens = pow(10, digits)
-    trimmed = float(int(float(num) * digitTens)) / digitTens
+def trim_digits(num, digits):
+    digit_tens = pow(10, digits)
+    trimmed = float(int(float(num) * digit_tens)) / digit_tens
     return trimmed
 
-#convert string to hex
 def str2hex(s):
+    '''
+    convert string to hex
+    '''
     lst = []
     for ch in s:
         hv = hex(ord(ch)).replace('0x', '')
@@ -72,16 +75,18 @@ def str2hex(s):
         lst.append(hv)
     return reduce(lambda x,y:x+y, lst)
 
-#convert hex repr to string
 def hex2str(s):
+    '''
+    convert hex repr to string
+    '''
     return s and chr(atoi(s[:2], base=16)) + hex2str(s[2:]) or ''
 
-def emptyThenNone(string):
+def empty_then_none(string):
     if string == '':
         return None
     else:
         return string
-def noneThenEmpty(string):
+def none_then_empty(string):
     if string is None:
         return ''
     else:
@@ -95,50 +100,50 @@ def datetime2timestamp(dt):
     return long(time.mktime(dt.timetuple()))
 
     
-def getParam(request, paramName, emptyValid=False, default=None, unicodeEncoding=True):
+def get_param(request, param_name, empty_valid=False, default=None, encode_unicode=True):
     val = default
-    if paramName in request.GET:
-        tempVal = request.GET[paramName]
-        if emptyValid or len(tempVal) > 0:
+    if param_name in request.GET:
+        tempVal = request.GET[param_name]
+        if empty_valid or len(tempVal) > 0:
             val = tempVal
-    if unicodeEncoding and val is not None:
+    if encode_unicode and val is not None:
         val = unicode(val)
     return val
 
-def postParam(request, paramName, emptyValid=False, default=None, unicodeEncoding=True):
+def post_param(request, param_name, empty_valid=False, default=None, encode_unicode=True):
     val = default
-    if paramName in request.POST:
-        tempVal = request.POST[paramName]
-        if emptyValid or len(tempVal) > 0:
+    if param_name in request.POST:
+        tempVal = request.POST[param_name]
+        if empty_valid or len(tempVal) > 0:
             val = tempVal
-    if unicodeEncoding and val is not None:
+    if encode_unicode and val is not None:
         val = unicode(val)
     return val
 
-def customRange(l,rangeFirst=None,rangeLast=None):
-    if rangeFirst is not None:
-        rangeFirst = int(rangeFirst)
-    if rangeLast is not None:
-        rangeLast = int(rangeLast)
-    if rangeFirst is not None:
-        if rangeLast is not None:
-            return l[rangeFirst:rangeLast]
+def custom_range(l,range_first=None,range_last=None):
+    if range_first is not None:
+        range_first = int(range_first)
+    if range_last is not None:
+        range_last = int(range_last)
+    if range_first is not None:
+        if range_last is not None:
+            return l[range_first:range_last]
         else:
-            return l[rangeFirst:]
-    elif rangeLast is not None:
-        return l[:rangeLast]
+            return l[range_first:]
+    elif range_last is not None:
+        return l[:range_last]
     else:
         return l
 
-def getPk(obj):
+def get_pk(obj):
     if obj is None:
         return None
     else:
         return obj.pk
     
-def uploadPic(uploadedFile, toFile):
+def upload_pic(uploaded_file, toFile):
     destination = open(os.path.join(settings.MEDIA_ROOT, toFile), 'wb+')
-    for chunk in uploadedFile.chunks():
+    for chunk in uploaded_file.chunks():
         destination.write(chunk)
     destination.close()
 
@@ -149,22 +154,22 @@ def dist(lat0,lon0, lat1,lon1):
 def staff():
     return User.objects.filter(is_staff=1)
 
-def staffEmails():
+def staff_emails():
     emails = []
     for user in staff():
         if user.email:
             emails.append(user.email)
     return emails
 
-def isListOrTuple(x):
+def is_list_or_tuple(x):
     return isinstance(x, (list,tuple))
 
-def toCommaSeparatedString(list):
-    if not list:
+def list2comma_separated(the_list):
+    if not the_list:
         return ''
     s = ''
     i = 0
-    for e in list:
+    for e in the_list:
         if i != 0:
             s += ','
         i += 1
@@ -173,9 +178,9 @@ def toCommaSeparatedString(list):
 
 
 def load_class(full_class_string):
-    """
+    '''
     dynamically load a class from a string
-    """
+    '''
     class_data = full_class_string.split(".")
     module_path = ".".join(class_data[:-1])
     class_str = class_data[-1]

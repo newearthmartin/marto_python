@@ -17,7 +17,7 @@ def django_command_line(default_module=None):
     parser = OptionParser(usage)
     parser.add_option('-s', '--settings', dest='settings', metavar='SETTINGS',
                       help="The Django settings module to use")
-    (options, args) = parser.parse_args()
+    options, _ = parser.parse_args()
     
     module = options.settings
     if not options.settings:

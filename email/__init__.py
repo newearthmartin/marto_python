@@ -1,10 +1,10 @@
 # encoding: utf-8
 from django.core.validators import EmailValidator
-from marto_python.util import isListOrTuple
 from django.template.loader import render_to_string
 from django.core.mail.message import EmailMessage
 from django.contrib.sites.models import Site
 from django.conf import settings
+from marto_python.util import is_list_or_tuple
 
 email_validator = EmailValidator()
 
@@ -17,7 +17,7 @@ def isEmail(email_str):
 
 #if sender is None, will use DEFAULT_FROM_EMAIL from settings
 def sendEmail(to, subject, template_file, context_dict, sender=settings.DEFAULT_FROM_EMAIL):
-    if not isListOrTuple(to):
+    if not is_list_or_tuple(to):
         to = [to]
     context_dict['site'] = Site.objects.get_current()
     email_html = render_to_string(template_file, context_dict)

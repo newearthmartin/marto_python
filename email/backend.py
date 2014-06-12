@@ -1,11 +1,9 @@
 # encoding: utf-8
 
 from django.core.mail.backends.base import BaseEmailBackend
-from django.core.mail.backends import console
 import email
 from marto_python.email.models import EmailMessage
-from marto_python.util import toCommaSeparatedString, load_class, setting
-from django.conf import settings
+from marto_python.util import list2comma_separated, load_class, setting
 
 class DecoratorBackend(BaseEmailBackend):
     '''abstract class for decorators to add functionality to EmailBackend in a decorator pattern'''      
@@ -40,9 +38,9 @@ class DBEmailBackend(DecoratorBackend):
             email.sender    = message.from_email
             email.subject   = message.subject
             email.body      = message.body
-            email.to        = toCommaSeparatedString(message.to)
-            email.cc        = toCommaSeparatedString(message.cc)
-            email.bcc       = toCommaSeparatedString(message.bcc)
+            email.to        = list2comma_separated(message.to)
+            email.cc        = list2comma_separated(message.cc)
+            email.bcc       = list2comma_separated(message.bcc)
             #attachments: A list of attachments to put on the message. These can be either email.MIMEBase.MIMEBase instances, or (filename, content, mimetype) triples.
             #headers: A dictionary of extra headers to put on the message. The keys are the header name, values are the header values. It’s up to the caller to ensure header names and values are in the correct format for an email message. The corresponding attribute is extra_headers.
             email.save()
@@ -70,9 +68,9 @@ class FilteringEmailBackend(DecoratorBackend):
             status = ''
             message_string = '%s (to:%s cc:%s bcc:%s)' %  (
                                                           message.subject,
-                                                          toCommaSeparatedString(message.to), 
-                                                          toCommaSeparatedString(message.cc), 
-                                                          toCommaSeparatedString(message.bcc), 
+                                                          list2comma_separated(message.to), 
+                                                          list2comma_separated(message.cc), 
+                                                          list2comma_separated(message.bcc), 
                                                           )
             if send:
                 status = 'SENDING E-MAIL - ' + message_string
@@ -84,7 +82,7 @@ class FilteringEmailBackend(DecoratorBackend):
                     message.cc = []
                     message.bcc = []
                     send = True
-                    status += ' - redirecting to %s' % toCommaSeparatedString(self.redirect_to)
+                    status += ' - redirecting to %s' % list2comma_separated(self.redirect_to)
                 else:
                     status += ' - not redirecting'
             print status
