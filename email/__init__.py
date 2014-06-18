@@ -8,7 +8,7 @@ from marto_python.util import is_list_or_tuple
 
 email_validator = EmailValidator()
 
-def isEmail(email_str):
+def is_email(email_str):
     try:
         email_validator(email_str)
         return True
@@ -16,7 +16,7 @@ def isEmail(email_str):
         return False
 
 #if sender is None, will use DEFAULT_FROM_EMAIL from settings
-def sendEmail(to, subject, template_file, context_dict, sender=settings.DEFAULT_FROM_EMAIL):
+def send_email(to, subject, template_file, context_dict, sender=settings.DEFAULT_FROM_EMAIL):
     if not is_list_or_tuple(to):
         to = [to]
     context_dict['site'] = Site.objects.get_current()

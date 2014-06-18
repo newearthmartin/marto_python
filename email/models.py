@@ -4,7 +4,7 @@ from django.db import models
 from django.utils.crypto import get_random_string
 from django.contrib.admin.options import ModelAdmin
 from django.contrib.admin.widgets import AdminTextInputWidget
-from marto_python.email import sendEmail
+from marto_python.email import send_email
 from tinymce.widgets import TinyMCE
 
 random.seed()
@@ -47,23 +47,23 @@ class EmailConfirmationMixin(models.Model):
     def getPrimaryEmail(self):
         return self.get_user().email
 
-    def setEmail(self, email, addAsConfirmed=False):
+    def set_email(self, email, add_as_confirmed=False):
         u = self.get_user()
         if email == u.email:
             return
-        if addAsConfirmed:
-            self.emailConfirmed = addAsConfirmed
+        if add_as_confirmed:
+            self.emailConfirmed = add_as_confirmed
             self.emailConfirmationKey = None
             self.save(update_fields=['emailConfirmed', 'emailConfirmationKey'])
         else:
-            self.generateEmailConfirmationKey()
+            self.generate_confirmation_key()
             
-    def generateEmailConfirmationKey(self):
+    def generate_confirmation_key(self):
         self.emailConfirmationKey = get_random_string()
         self.emailConfirmed = False
         self.save(update_fields=['emailConfirmed', 'emailConfirmationKey'])
         
-    def confirmEmail(self, key):
+    def confirm_email(self, key):
         if key == self.emailConfirmationKey:
             self.emailConfirmed = True
             self.emailConfirmationKey = None
@@ -72,11 +72,11 @@ class EmailConfirmationMixin(models.Model):
         else:
             return False
     #does not generate key
-    def sendEmailConfirmation(self, subject, template, context=None):
+    def send_email_confirmation(self, subject, template, context=None):
         if context is None:
             context = {}
         user = self.getUser()
         context['user'] = user
-        context['emailConfirmation'] = self
-        sendEmail(user.email, subject, template, context)
+        context['email_confirmation'] = self
+        send_email(user.email, subject, template, context)
 

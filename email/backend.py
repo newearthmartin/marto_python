@@ -16,11 +16,9 @@ class DecoratorBackend(BaseEmailBackend):
     def setInnerBackend(self, backend):
         self.inner_backend = backend
 
-    
     def send_messages(self, email_messages):
         if self.inner_backend:
-            self.inner_backend.send_messages(email_messages)
-    
+            self.inner_backend.send_messages(email_messages)    
     def open(self):
         if self.inner_backend:
             self.inner_backend.open()
