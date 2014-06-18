@@ -24,7 +24,6 @@ def menu(request):
             selected = Menu.objects.get(totalUrl=request.path)
     except Menu.DoesNotExist:
         selected = None
-
     menus = []
     if selected:
         the_menu = selected

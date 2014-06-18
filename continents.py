@@ -295,16 +295,16 @@ continents = {
   },
 }
 
-reverseContinents = {}
+reverse_continents = {}
 for continentCode,continent in continents.items():
     continent['code'] = continentCode
     for country in continent['countries']:
-        reverseContinents[country] = continent
+        reverse_continents[country] = continent
 
-def getContinent(countryCode):
-    countryCode = countryCode.upper() 
-    if countryCode in reverseContinents: 
-        return reverseContinents[countryCode.upper()]
+def getContinent(country_code):
+    country_code = country_code.upper() 
+    if country_code in reverse_continents: 
+        return reverse_continents[country_code.upper()]
     else:
         return None
 

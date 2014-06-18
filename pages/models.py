@@ -23,12 +23,12 @@ class Menu(models.Model):
         else:
             parent = unicode(self.padre) + '->'
         return parent + self.titulo
-    def getUrl(self):
+    def get_url(self):
         if self.pagina is not None:
             return self.pagina.url
         else:
             if self.padre:
-                urlPadre = self.padre.getUrl()
+                urlPadre = self.padre.get_url()
             else:
                 urlPadre = ''                
             return urlPadre + self.url
@@ -43,7 +43,7 @@ class Menu(models.Model):
     @staticmethod
     def pre_save(sender, **kwargs):
         menu = kwargs['instance']
-        menu.totalUrl = menu.getUrl()        
+        menu.totalUrl = menu.get_url()        
 pre_save.connect(Menu.pre_save, sender=Menu)
 
 class MenuInline(admin.TabularInline):
