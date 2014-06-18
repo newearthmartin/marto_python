@@ -21,7 +21,7 @@ def menu(request):
         selected = request.session.get('the_menu')
         request.session['the_menu'] = None
         if not selected:
-            selected = Menu.objects.get(totalUrl=request.path)
+            selected = Menu.objects.get(total_url=request.path)
     except Menu.DoesNotExist:
         selected = None
     menus = []
@@ -33,7 +33,7 @@ def menu(request):
                 if selected == menu:
                     menu.selected = True
                 if the_menu != selected and the_menu == menu:
-                    menu.childSelected = True
+                    menu.child_selected = True
                 siblings.append(menu)
             menus.insert(0, siblings)
             the_menu = the_menu.padre
