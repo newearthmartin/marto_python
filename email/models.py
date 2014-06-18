@@ -17,6 +17,7 @@ class EmailMessage(models.Model):
     bcc         = models.TextField(null=True, blank=True) #comma separated list of recipients
     subject     = models.CharField(max_length=255, null=True, blank=True)
     body        = models.TextField(null=True, blank=True)
+    timestamp   = models.DateTimeField(null=False, auto_now_add=True)
     def __unicode__(self):
         return self.subject
     class AdminForm(forms.ModelForm):
@@ -38,13 +39,13 @@ class EmailMessageAdmin(ModelAdmin):
 class EmailConfirmationMixin(models.Model):
     class Meta:
         abstract = True
-    emailConfirmed             = models.BooleanField(blank=False, null=False, default=False, verbose_name='email confirmed')
-    emailConfirmationKey      = models.CharField(max_length=40, blank=True, null=True, default=None, verbose_name='email confirmation key' )
+    email_confirmed             = models.BooleanField(blank=False, null=False, default=False, verbose_name='email confirmed')
+    email_confirmation_key      = models.CharField(max_length=40, blank=True, null=True, default=None, verbose_name='email confirmation key' )
 
     #users should override this method if user is different from "self.user"
-    def getUser(self):
+    def get_user(self):
         return self.user
-    def getPrimaryEmail(self):
+    def get_primary_email(self):
         return self.get_user().email
 
     def set_email(self, email, add_as_confirmed=False):
@@ -52,22 +53,22 @@ class EmailConfirmationMixin(models.Model):
         if email == u.email:
             return
         if add_as_confirmed:
-            self.emailConfirmed = add_as_confirmed
-            self.emailConfirmationKey = None
-            self.save(update_fields=['emailConfirmed', 'emailConfirmationKey'])
+            self.email_confirmed = add_as_confirmed
+            self.email_confirmation_key = None
+            self.save(update_fields=['email_confirmed', 'email_confirmation_key'])
         else:
             self.generate_confirmation_key()
             
     def generate_confirmation_key(self):
-        self.emailConfirmationKey = get_random_string()
-        self.emailConfirmed = False
-        self.save(update_fields=['emailConfirmed', 'emailConfirmationKey'])
+        self.email_confirmation_key = get_random_string()
+        self.email_confirmed = False
+        self.save(update_fields=['email_confirmed', 'email_confirmation_key'])
         
     def confirm_email(self, key):
-        if key == self.emailConfirmationKey:
-            self.emailConfirmed = True
-            self.emailConfirmationKey = None
-            self.save(update_fields=['emailConfirmed', 'emailConfirmationKey'])
+        if key == self.email_confirmation_key:
+            self.email_confirmed = True
+            self.email_confirmation_key = None
+            self.save(update_fields=['email_confirmed', 'email_confirmation_key'])
             return True
         else:
             return False
@@ -75,7 +76,7 @@ class EmailConfirmationMixin(models.Model):
     def send_email_confirmation(self, subject, template, context=None):
         if context is None:
             context = {}
-        user = self.getUser()
+        user = self.get_user()
         context['user'] = user
         context['email_confirmation'] = self
         send_email(user.email, subject, template, context)

@@ -10,12 +10,12 @@ class Menu(models.Model):
     class Meta:
         verbose_name = 'menú'
         verbose_name_plural = 'menus'
-    titulo = models.CharField(max_length=255)
-    padre = models.ForeignKey('Menu', null=True,blank=True, related_name='children')
-    indice = models.IntegerField(default=0)
-    pagina = models.ForeignKey('Pagina', null=True, blank=True, related_name='menu')
-    url = models.CharField(max_length=255, null=True, blank=True)
-    totalUrl = models.CharField(max_length=255, null=True, blank=True)
+    titulo      = models.CharField(max_length=255)
+    padre       = models.ForeignKey('Menu', null=True,blank=True, related_name='children')
+    indice      = models.IntegerField(default=0)
+    pagina      = models.ForeignKey('Pagina', null=True, blank=True, related_name='menu')
+    url         = models.CharField(max_length=255, null=True, blank=True)
+    total_url   = models.CharField(max_length=255, null=True, blank=True)
     def __unicode__(self):
         parent = ''
         if self.padre is None:
@@ -32,18 +32,18 @@ class Menu(models.Model):
             else:
                 urlPadre = ''                
             return urlPadre + self.url
-    def totalIndex(self):
+    def total_index(self):
         if self.padre is None:
             return str(self.indice)
         else:
-            return self.padre.totalIndex() + '.' + str(self.indice)
+            return self.padre.total_index() + '.' + str(self.indice)
     class Admin(admin.ModelAdmin):
-        list_display = ('__unicode__', 'totalIndex', 'pagina', 'totalUrl')
+        list_display = ('__unicode__', 'total_index', 'pagina', 'total_url')
         fields = ['titulo', 'padre', 'indice', 'pagina', 'url']
     @staticmethod
     def pre_save(sender, **kwargs):
         menu = kwargs['instance']
-        menu.totalUrl = menu.get_url()        
+        menu.total_url = menu.get_url()        
 pre_save.connect(Menu.pre_save, sender=Menu)
 
 class MenuInline(admin.TabularInline):
@@ -60,7 +60,7 @@ class Pagina(models.Model):
     extra_css   = models.CharField(max_length=255, blank=True, null=True)
     def __unicode__(self):
         return self.url
-    def getMenu(self):
+    def get_menu(self):
         try:
             return self.menu.all()[0]
         except Menu.DoesNotExist:
@@ -72,12 +72,12 @@ class Pagina(models.Model):
             }
 class PaginaAdmin(admin.ModelAdmin):
     form = Pagina.AdminForm
-    list_display = ['__unicode__', 'url', 'menuIndex']
+    list_display = ['__unicode__', 'url', 'menu_index']
     inlines = [MenuInline,]
-    def menuIndex(self, pagina):
+    def menu_index(self, pagina):
         if pagina.menu.count() == 0:
             return 'Sin menu'
         elif pagina.menu.count() == 1:
-            return pagina.menu.all()[0].totalIndex()
+            return pagina.menu.all()[0].total_index()
         else:
             return 'más de un menu hacia esta página'
