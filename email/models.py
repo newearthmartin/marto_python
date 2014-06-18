@@ -30,10 +30,9 @@ class EmailMessage(models.Model):
             }
 class EmailMessageAdmin(ModelAdmin):
     form = EmailMessage.AdminForm
-    list_display = ['to', 'subject']
+    list_display = ['to', 'subject', 'timestamp']
     list_filter = ['to', 'subject']
     search_fields = ['from_email', 'to', 'cc', 'bcc', 'subject', 'body']
-
 
 #for mixing into the UserProfile model
 class EmailConfirmationMixin(models.Model):
