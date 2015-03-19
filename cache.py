@@ -5,10 +5,12 @@ class cache_decorator:
         self.cache_key = cache_key
         self.timeout = timeout
         self.cache_name = cache_name
-    def __call__(self, f, *args, **kwargs):
-        cache = get_cache(self.cache_name)
-        retval = cache.get(self.cache_key)
-        if not retval:
-            retval = f(*args, **kwargs)
-            cache.set(self.cache_key, retval, self.timeout)
-        return retval
+    def __call__(self, f):
+        def wrapped_f(*args, **kwargs):
+            cache = get_cache(self.cache_name)
+            retval = cache.get(self.cache_key)
+            if not retval:
+                retval = f(*args, **kwargs)
+                cache.set(self.cache_key, retval, self.timeout)
+            return retval
+        return wrapped_f
