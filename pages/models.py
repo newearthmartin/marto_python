@@ -42,7 +42,7 @@ class Menu(models.Model):
         if menu.pagina:
             menu.url = None
         if menu.url \
-                 and not menu.url.startsWith('http') \
+                 and not menu.url.startswith('http') \
                  and not menu.url.startswith('/'):
             menu.url = '/' + menu.url
 pre_save.connect(Menu.pre_save, sender=Menu)
