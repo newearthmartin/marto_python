@@ -1,7 +1,8 @@
 # coding: utf-8
 
-from django.db import models
 from django import forms
+from django.db import models
+from django.conf import settings
 from tinymce.widgets import TinyMCE
 from django.db.models.signals import pre_save
 from django.contrib import admin
@@ -9,41 +10,41 @@ from django.contrib import admin
 class Menu(models.Model):
     class Meta:
         verbose_name = 'menú'
-        verbose_name_plural = 'menus'
+        verbose_name_plural = 'menús'
     titulo      = models.CharField(max_length=255)
+    seccion     = models.CharField(max_length=10, choices=settings.MENU_SECTIONS)
     padre       = models.ForeignKey('Menu', null=True,blank=True, related_name='children')
     indice      = models.IntegerField(default=0)
-    pagina      = models.ForeignKey('Pagina', null=True, blank=True, related_name='menu')
+    pagina      = models.ForeignKey('Pagina', null=True, blank=True)
     url         = models.CharField(max_length=255, null=True, blank=True)
     total_url   = models.CharField(max_length=255, null=True, blank=True)
     def __unicode__(self):
-        parent = ''
-        if self.padre is None:
-            parent = ''
-        else:
-            parent = unicode(self.padre) + '->'
-        return parent + self.titulo
+        unicode_padre = (unicode(self.padre) + '->') if self.padre else ''
+        return unicode_padre + self.titulo
     def get_url(self):
-        if self.pagina is not None:
+        if self.pagina:
             return self.pagina.url
         else:
-            if self.padre:
-                urlPadre = self.padre.get_url()
-            else:
-                urlPadre = ''                
-            return urlPadre + self.url
+            url_padre = self.padre.get_url() if self.padre else ''
+            return url_padre + self.url
     def total_index(self):
-        if self.padre is None:
-            return str(self.indice)
-        else:
-            return self.padre.total_index() + '.' + str(self.indice)
+        index_padre = (self.padre.total_index() + '.') if self.padre else ''
+        return index_padre + str(self.indice)
+    def ordered_children(self):
+        return self.children.order_by('indice')
     class Admin(admin.ModelAdmin):
-        list_display = ('__unicode__', 'total_index', 'pagina', 'total_url')
-        fields = ['titulo', 'padre', 'indice', 'pagina', 'url']
+        list_display = ['__unicode__', 'seccion', 'total_index', 'pagina', 'total_url']
+        exclude      = ['total_url']
     @staticmethod
     def pre_save(sender, **kwargs):
         menu = kwargs['instance']
         menu.total_url = menu.get_url()        
+        if menu.pagina:
+            menu.url = None
+        if menu.url \
+                 and not menu.url.startsWith('http') \
+                 and not menu.url.startswith('/'):
+            menu.url = '/' + menu.url
 pre_save.connect(Menu.pre_save, sender=Menu)
 
 class MenuInline(admin.TabularInline):
@@ -62,7 +63,7 @@ class Pagina(models.Model):
         return self.url
     def get_menu(self):
         try:
-            return self.menu.all()[0]
+            return self.menu_set.all()[0]
         except Menu.DoesNotExist:
             return None
     class AdminForm(forms.ModelForm):
@@ -75,9 +76,9 @@ class PaginaAdmin(admin.ModelAdmin):
     list_display = ['__unicode__', 'url', 'menu_index']
     inlines = [MenuInline,]
     def menu_index(self, pagina):
-        if pagina.menu.count() == 0:
+        if pagina.menu_set.count() == 0:
             return 'Sin menu'
-        elif pagina.menu.count() == 1:
-            return pagina.menu.all()[0].total_index()
+        elif pagina.menu_set.count() == 1:
+            return pagina.menu_set.all()[0].total_index()
         else:
             return 'más de un menu hacia esta página'
