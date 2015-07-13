@@ -7,6 +7,26 @@ from tinymce.widgets import TinyMCE
 from django.db.models.signals import pre_save
 from django.contrib import admin
 
+class Pagina(models.Model):
+    class Meta:
+        verbose_name = 'página'
+    url         = models.CharField(max_length=255, unique=True)
+    titulo      = models.CharField(max_length=255)
+    contenido   = models.TextField()
+    extra_css   = models.CharField(max_length=255, blank=True, null=True)
+    def __unicode__(self):
+        return self.url
+    def get_menu(self):
+        try:
+            return self.menu_set.all()[0]
+        except Menu.DoesNotExist:
+            return None
+    class AdminForm(forms.ModelForm):
+        class Meta:
+            widgets = {
+                'contenido': TinyMCE(attrs={'cols': 100, 'rows': 50}),
+            }
+
 class Menu(models.Model):
     class Meta:
         verbose_name = 'menú'
@@ -50,27 +70,7 @@ pre_save.connect(Menu.pre_save, sender=Menu)
 class MenuInline(admin.TabularInline):
     model = Menu
     fields = ('titulo', 'indice', 'padre')
-    
-    
-class Pagina(models.Model):
-    class Meta:
-        verbose_name = 'página'
-    url         = models.CharField(max_length=255, unique=True)
-    titulo      = models.CharField(max_length=255)
-    contenido   = models.TextField()
-    extra_css   = models.CharField(max_length=255, blank=True, null=True)
-    def __unicode__(self):
-        return self.url
-    def get_menu(self):
-        try:
-            return self.menu_set.all()[0]
-        except Menu.DoesNotExist:
-            return None
-    class AdminForm(forms.ModelForm):
-        class Meta:
-            widgets = {
-                'contenido': TinyMCE(attrs={'cols': 100, 'rows': 50}),
-            }
+
 class PaginaAdmin(admin.ModelAdmin):
     form = Pagina.AdminForm
     list_display = ['__unicode__', 'url', 'menu_index']
