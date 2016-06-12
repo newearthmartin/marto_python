@@ -39,21 +39,14 @@ def restart():
     require('hosts', provided_by=[prod])
     require('remote_apache_dir', provided_by=[prod])
     run("%s/bin/restart;" % (env.remote_apache_dir))
-
 @task
-def deploy():
-    '''push, pull, collect static, restart'''
+def push():
+    '''push and pull'''
     require('hosts', provided_by=[prod])
-    require('remote_app_dir', provided_by=[prod])
     require('venv_app', provided_by=[prod])
-
     local("git push origin master")
-
     with prefix(env.venv_app):
         run("git pull")
-
-    collectstatic()
-    restart()
 
 @task
 def migrate():
@@ -62,3 +55,15 @@ def migrate():
     require('venv_app', provided_by=[prod])
     with prefix(env.venv_app):
         run("python manage.py migrate")
+
+
+@task
+def deploy():
+    '''push, pull, collect static, restart'''
+    require('hosts', provided_by=[prod])
+    require('remote_app_dir', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    push()
+    collectstatic()
+    migrate()
+    restart()
