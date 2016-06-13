@@ -17,28 +17,12 @@ def pip():
     with prefix(env.venv_app):
         run("pip install -r requirements.txt")
 
-
 @task
 def commit():
     message = raw_input("Enter a git commit message:  ")
     local("git add -A && git commit -m \"%s\"" % message)
-    local("git push origin master")
     print "Changes have been pushed to remote repository..."
 
-@task
-def collectstatic():
-    '''collect static files'''
-    require('hosts', provided_by=[prod])
-    require('venv_app', provided_by=[prod])
-    with prefix(env.venv_app):
-        run("python manage.py collectstatic --noinput")
-
-@task
-def restart():
-    """Restart apache on the server."""
-    require('hosts', provided_by=[prod])
-    require('remote_apache_dir', provided_by=[prod])
-    run("%s/bin/restart;" % (env.remote_apache_dir))
 @task
 def push():
     '''push and pull'''
@@ -49,6 +33,14 @@ def push():
         run("git pull")
 
 @task
+def collectstatic():
+    '''collect static files'''
+    require('hosts', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    with prefix(env.venv_app):
+        run("python manage.py collectstatic --noinput")
+
+@task
 def migrate():
     '''execute migrations'''
     require('hosts', provided_by=[prod])
@@ -56,6 +48,12 @@ def migrate():
     with prefix(env.venv_app):
         run("python manage.py migrate")
 
+@task
+def restart():
+    """Restart apache on the server."""
+    require('hosts', provided_by=[prod])
+    require('remote_apache_dir', provided_by=[prod])
+    run("%s/bin/restart;" % (env.remote_apache_dir))
 
 @task
 def deploy():
