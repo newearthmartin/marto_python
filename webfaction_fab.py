@@ -17,13 +17,20 @@ def pip():
     with prefix(env.venv_app):
         run("pip install -r requirements.txt")
 
-
 @task
 def commit():
     message = raw_input("Enter a git commit message:  ")
     local("git add -A && git commit -m \"%s\"" % message)
-    local("git push origin master")
     print "Changes have been pushed to remote repository..."
+
+@task
+def push():
+    '''push and pull'''
+    require('hosts', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    local("git push origin master")
+    with prefix(env.venv_app):
+        run("git pull")
 
 @task
 def collectstatic():
@@ -32,6 +39,14 @@ def collectstatic():
     require('venv_app', provided_by=[prod])
     with prefix(env.venv_app):
         run("python manage.py collectstatic --noinput")
+
+@task
+def migrate():
+    '''execute migrations'''
+    require('hosts', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    with prefix(env.venv_app):
+        run("python manage.py migrate")
 
 @task
 def restart():
@@ -46,19 +61,7 @@ def deploy():
     require('hosts', provided_by=[prod])
     require('remote_app_dir', provided_by=[prod])
     require('venv_app', provided_by=[prod])
-
-    local("git push origin master")
-
-    with prefix(env.venv_app):
-        run("git pull")
-
+    push()
     collectstatic()
+    migrate()
     restart()
-
-@task
-def migrate():
-    '''execute migrations'''
-    require('hosts', provided_by=[prod])
-    require('venv_app', provided_by=[prod])
-    with prefix(env.venv_app):
-        run("python manage.py migrate")
