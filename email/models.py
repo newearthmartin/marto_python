@@ -9,7 +9,6 @@ from tinymce.widgets import TinyMCE
 
 random.seed()
 
-# Create your models here.
 class EmailMessage(models.Model):
     from_email  = models.EmailField(null=False, blank=False)
     to          = models.TextField(null=True, blank=True) #comma separated list of recipients
@@ -17,7 +16,9 @@ class EmailMessage(models.Model):
     bcc         = models.TextField(null=True, blank=True) #comma separated list of recipients
     subject     = models.CharField(max_length=255, null=True, blank=True)
     body        = models.TextField(null=True, blank=True)
-    timestamp   = models.DateTimeField(null=False, auto_now_add=True)
+    created_on  = models.DateTimeField(auto_now_add=True)
+    sent        = models.BooleanField(default=False)
+    sent_on     = models.DateTimeField(null=True, blank=True)
     def __unicode__(self):
         return self.subject
     class AdminForm(forms.ModelForm):
@@ -30,8 +31,8 @@ class EmailMessage(models.Model):
             }
 class EmailMessageAdmin(ModelAdmin):
     form = EmailMessage.AdminForm
-    list_display = ['to', 'subject', 'timestamp']
-    list_filter = ['to', 'subject']
+    list_display = ['to', 'subject', 'sent', 'created_on', 'sent_on']
+    list_filter = ['to', 'subject', 'sent', 'sent_on']
     search_fields = ['from_email', 'to', 'cc', 'bcc', 'subject', 'body']
 
 #for mixing into the UserProfile model
@@ -57,12 +58,12 @@ class EmailConfirmationMixin(models.Model):
             self.save(update_fields=['email_confirmed', 'email_confirmation_key'])
         else:
             self.generate_confirmation_key()
-            
+
     def generate_confirmation_key(self):
         self.email_confirmation_key = get_random_string()
         self.email_confirmed = False
         self.save(update_fields=['email_confirmed', 'email_confirmation_key'])
-        
+
     def confirm_email(self, key):
         if key == self.email_confirmation_key:
             self.email_confirmed = True
@@ -79,4 +80,3 @@ class EmailConfirmationMixin(models.Model):
         context['user'] = user
         context['email_confirmation'] = self
         send_email(user.email, subject, template, context)
-
