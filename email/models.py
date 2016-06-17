@@ -20,6 +20,7 @@ class EmailMessage(models.Model):
     sent        = models.BooleanField(default=False)
     sent_on     = models.DateTimeField(null=True, blank=True)
     failed_send = models.BooleanField(default=False)
+    email_object = models.TextField(null=True, blank=True)
     def __unicode__(self):
         return self.subject
     class AdminForm(forms.ModelForm):

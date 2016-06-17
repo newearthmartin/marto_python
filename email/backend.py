@@ -12,6 +12,7 @@ from django.conf import settings
 from marto_python.email.models import EmailMessage
 from marto_python.util import list2comma_separated, load_class, setting
 import email
+import pickle
 
 class DecoratorBackend(BaseEmailBackend):
     '''abstract class for decorators to add functionality to EmailBackend in a decorator pattern'''
@@ -42,36 +43,32 @@ class DBEmailBackend(DecoratorBackend):
 
     @staticmethod
     def django_message_to_db_email(message):
+        connection = message.connection
+        message.connection = None
+        message_pickle = pickle.dumps(message)
+        message.connection = connection
         email = EmailMessage()
         email.from_email    = message.from_email
-        email.subject   = message.subject
-        email.body      = message.body
-        email.to        = list2comma_separated(message.to)
-        email.cc        = list2comma_separated(message.cc)
-        email.bcc       = list2comma_separated(message.bcc)
-        #attachments: A list of attachments to put on the message. These can be either email.MIMEBase.MIMEBase instances, or (filename, content, mimetype) triples.
-        #headers: A dictionary of extra headers to put on the message. The keys are the header name, values are the header values. It’s up to the caller to ensure header names and values are in the correct format for an email message. The corresponding attribute is extra_headers.
-        #replyto
+        email.subject       = message.subject
+        email.body          = message.body
+        email.to            = list2comma_separated(message.to)
+        email.cc            = list2comma_separated(message.cc)
+        email.bcc           = list2comma_separated(message.bcc)
+        email.email_object  = message_pickle
         return email
     @staticmethod
     def db_email_to_django_message(email):
-        message = mail.EmailMessage()
-        message.from_email  = email.from_email
-        message.subject     = email.subject
-        message.body        = email.body
-        message.to          = email.to.split(',')
-        message.cc          = email.cc.split(',')
-        message.bcc         = email.bcc.split(',')
+        message = pickle.loads(email.email_object)
         return message
     def send_messages(self, email_messages):
         emails = map(DBEmailBackend.django_message_to_db_email, email_messages)
         for email in emails:
             email.save()
-        if getattr(settings, "EMAIL_DB_BACKEND_SEND_IMMEDIATELY", True):
+        if getattr(settings, "EMAIL_DB_BACKEND_SEND_IMMEDIATELY", False):
             logger.info('sending emails now')
             self.do_send(emails)
         else:
-            logger.info('stored emails for sending later')
+            logger.info('stored %d emails for sending later' % len(emails))
     def send_all(self):
         MAX_TODAY = getattr(settings, 'EMAIL_DB_BACKEND_MAX_DAILY_TOTAL', 2000)
         MAX_BY_SUBJECT = getattr(settings, 'EMAIL_DB_BACKEND_MAX_DAILY_BY_SUBJECT', 700)
@@ -123,8 +120,6 @@ class DBEmailBackend(DecoratorBackend):
             email.sent_on = timezone.now()
             email.sent = True
             email.save()
-        #email_messages = map(DBEmailBackend.db_email_to_django_message, emails)
-        #super(DBEmailBackend, self).send_messages(email_messages)
         logger.info('sending %d mails finished' % len(emails))
 
 class FilteringEmailBackend(DecoratorBackend):
