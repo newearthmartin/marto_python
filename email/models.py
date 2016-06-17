@@ -19,6 +19,7 @@ class EmailMessage(models.Model):
     created_on  = models.DateTimeField(auto_now_add=True)
     sent        = models.BooleanField(default=False)
     sent_on     = models.DateTimeField(null=True, blank=True)
+    failed_send = models.BooleanField(default=False)
     def __unicode__(self):
         return self.subject
     class AdminForm(forms.ModelForm):
@@ -31,8 +32,8 @@ class EmailMessage(models.Model):
             }
 class EmailMessageAdmin(ModelAdmin):
     form = EmailMessage.AdminForm
-    list_display = ['to', 'subject', 'sent', 'created_on', 'sent_on']
-    list_filter = ['to', 'subject', 'sent', 'created_on', 'sent_on']
+    list_display = ['to', 'subject', 'sent', 'failed_send', 'created_on', 'sent_on']
+    list_filter = ['to', 'subject', 'sent', 'failed_send', 'created_on', 'sent_on']
     search_fields = ['from_email', 'to', 'cc', 'bcc', 'subject', 'body']
 
 #for mixing into the UserProfile model

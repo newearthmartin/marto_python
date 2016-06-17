@@ -1,6 +1,7 @@
 # encoding: utf-8
 import datetime
 import logging
+import smtplib
 logger = logging.getLogger(__name__)
 
 from django.core.mail.backends.base import BaseEmailBackend
@@ -108,13 +109,18 @@ class DBEmailBackend(DecoratorBackend):
     def do_send(self, emails):
         logger.info('sending %d emails' % len(emails))
         for email in emails:
-            #email_message = DBEmailBackend.db_email_to_django_message(email)
-            #super(DBEmailBackend, self).send_messages([email_message])
-            email.sent = True
+            email_message = DBEmailBackend.db_email_to_django_message(email)
+            try:
+                email.failed_send = True
+                super(DBEmailBackend, self).send_messages([email_message])
+                email.failed_send = False
+            except smtplib.SMTPDataError:
+                logger.error('error sending email - %s - %s' % (email.to, email.subject))
             email.sent_on = timezone.now()
+            email.sent = True
             email.save()
-        email_messages = map(DBEmailBackend.db_email_to_django_message, emails)
-        super(DBEmailBackend, self).send_messages(email_messages)
+        #email_messages = map(DBEmailBackend.db_email_to_django_message, emails)
+        #super(DBEmailBackend, self).send_messages(email_messages)
         logger.info('sending %d mails finished' % len(emails))
 
 class FilteringEmailBackend(DecoratorBackend):
