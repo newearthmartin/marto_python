@@ -109,6 +109,10 @@ class DBEmailBackend(DecoratorBackend):
     def do_send(self, emails):
         logger.info('sending %d emails' % len(emails))
         for email in emails:
+            #check again if its not sent, for concurrency
+            if email.sent:
+                logger.debug('email already sent %s - %s' % ((email.to, email.subject)))
+                continue
             email_message = DBEmailBackend.db_email_to_django_message(email)
             try:
                 email.failed_send = True
