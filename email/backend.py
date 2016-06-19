@@ -77,7 +77,7 @@ class DBEmailBackend(DecoratorBackend):
         sends all emails in the queryset.
         will add the filter of sent=False
         '''
-        self.send_emails(queryset.filter(sent=False).all())
+        self.send_emails(emails_queryset.filter(sent=False).all())
 
     def send_emails(self, emails):
         '''
