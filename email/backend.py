@@ -2,8 +2,8 @@
 import email
 import pickle
 import datetime
-import logging
 import smtplib
+import logging
 logger = logging.getLogger(__name__)
 
 from django.core.mail.backends.base import BaseEmailBackend
