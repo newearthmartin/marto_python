@@ -2,10 +2,7 @@ import random
 from django import forms
 from django.db import models
 from django.utils.crypto import get_random_string
-from django.contrib.admin.options import ModelAdmin
-from django.contrib.admin.widgets import AdminTextInputWidget
 from marto_python.email import send_email
-from tinymce.widgets import TinyMCE
 
 random.seed()
 
@@ -23,19 +20,6 @@ class EmailMessage(models.Model):
     email_object = models.TextField(null=True, blank=True)
     def __unicode__(self):
         return self.subject
-    class AdminForm(forms.ModelForm):
-        class Meta:
-            widgets = {
-                'to': AdminTextInputWidget,
-                'cc': AdminTextInputWidget,
-                'bcc': AdminTextInputWidget,
-                'body': TinyMCE(attrs={'cols': 120, 'rows': 50}),
-            }
-class EmailMessageAdmin(ModelAdmin):
-    form = EmailMessage.AdminForm
-    list_display = ['to', 'subject', 'sent', 'failed_send', 'created_on', 'sent_on']
-    list_filter = ['sent', 'failed_send', 'created_on', 'sent_on']
-    search_fields = ['from_email', 'to', 'cc', 'bcc', 'subject', 'body']
 
 #for mixing into the UserProfile model
 class EmailConfirmationMixin(models.Model):

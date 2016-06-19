@@ -70,11 +70,18 @@ class DBEmailBackend(DecoratorBackend):
         else:
             logger.info('stored %d emails for sending later' % len(emails))
     def send_all(self):
+        self.send_queryset(EmailMessage.objects)
+
+    def send_queryset(self, emails_queryset):
+        '''
+        sends all emails in the queryset.
+        will add the filter of sent=False
+        '''
+        emails = emails_queryset.filter(sent=False)
         MAX_TODAY = getattr(settings, 'EMAIL_DB_BACKEND_MAX_DAILY_TOTAL', 2000)
         MAX_BY_SUBJECT = getattr(settings, 'EMAIL_DB_BACKEND_MAX_DAILY_BY_SUBJECT', 700)
 
         yesterday24hs = timezone.now() - datetime.timedelta(days=1)
-        emails = EmailMessage.objects.filter(sent=False)
         emails_sent_today = EmailMessage.objects.filter(sent=True).filter(sent_on__gt=yesterday24hs)
         num_emails = emails.count()
         num_emails_sent_today = emails_sent_today.count()
