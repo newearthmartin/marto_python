@@ -122,6 +122,7 @@ class DBEmailBackend(DecoratorBackend):
             try:
                 super(DBEmailBackend, self).send_messages([email_message])
             except (smtplib.SMTPDataError, smtplib.SMTPRecipientsRefused) as e:
+                email.fail_message = unicode(e)
                 logger.warn('error sending email to %s - %s' % (email.to, e))
                 email.failed_send = True
             email.sent_on = timezone.now()
