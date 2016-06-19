@@ -19,9 +19,9 @@ class EmailMessageAdminForm(forms.ModelForm):
 
 class EmailMessageAdmin(ModelAdmin):
     form = EmailMessageAdminForm
-    list_display = ['to', 'subject', 'sent', 'failed_send', 'created_on', 'sent_on']
+    list_display = ['to', 'subject', 'sent', 'failed_send', 'fail_message', 'created_on', 'sent_on']
     list_filter = ['sent', 'failed_send', 'created_on', 'sent_on']
-    search_fields = ['from_email', 'to', 'cc', 'bcc', 'subject', 'body']
+    search_fields = ['from_email', 'to', 'cc', 'bcc', 'subject', 'body', 'fail_message']
     actions = ['send']
     def send(self, request, queryset):
         DBEmailBackend().send_queryset(queryset)
