@@ -61,16 +61,6 @@ class DBEmailBackend(DecoratorBackend):
         return email
     @staticmethod
     def db_email_to_django_message(email):
-        print
-        print
-        print
-        print
-        print email.email_class
-        print
-        print
-        print
-        print
-        
         message = load_class(email.email_class)()
         message.__dict__ = json.loads(email.email_dump)
         return message
