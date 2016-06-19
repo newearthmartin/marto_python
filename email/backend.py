@@ -1,4 +1,6 @@
 # encoding: utf-8
+import email
+import pickle
 import datetime
 import logging
 import smtplib
@@ -11,8 +13,6 @@ from django.conf import settings
 
 from marto_python.email.models import EmailMessage
 from marto_python.util import list2comma_separated, load_class, setting
-import email
-import pickle
 
 class DecoratorBackend(BaseEmailBackend):
     '''abstract class for decorators to add functionality to EmailBackend in a decorator pattern'''
