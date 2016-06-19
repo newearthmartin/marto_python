@@ -34,7 +34,7 @@ class EmailMessage(models.Model):
 class EmailMessageAdmin(ModelAdmin):
     form = EmailMessage.AdminForm
     list_display = ['to', 'subject', 'sent', 'failed_send', 'created_on', 'sent_on']
-    list_filter = ['to', 'subject', 'sent', 'failed_send', 'created_on', 'sent_on']
+    list_filter = ['subject', 'sent', 'failed_send', 'created_on', 'sent_on']
     search_fields = ['from_email', 'to', 'cc', 'bcc', 'subject', 'body']
 
 #for mixing into the UserProfile model
