@@ -1,6 +1,6 @@
 # encoding: utf-8
 import email
-import pickle
+import json
 import datetime
 import smtplib
 import logging
@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.conf import settings
 
 from marto_python.email.models import EmailMessage
-from marto_python.util import list2comma_separated, load_class, setting
+from marto_python.util import list2comma_separated, get_full_class, load_class, setting
 
 class DecoratorBackend(BaseEmailBackend):
     '''abstract class for decorators to add functionality to EmailBackend in a decorator pattern'''
@@ -45,8 +45,9 @@ class DBEmailBackend(DecoratorBackend):
     def django_message_to_db_email(message):
         connection = message.connection
         message.connection = None
-        message_pickle = pickle.dumps(message)
+        dump = json.dumps(message.__dict__)
         message.connection = connection
+
         email = EmailMessage()
         email.from_email    = message.from_email
         email.subject       = message.subject
@@ -54,11 +55,24 @@ class DBEmailBackend(DecoratorBackend):
         email.to            = list2comma_separated(message.to)
         email.cc            = list2comma_separated(message.cc)
         email.bcc           = list2comma_separated(message.bcc)
-        email.email_object  = message_pickle
+        email.email_class   = get_full_class(message)
+        email.email_dump    = dump
+
         return email
     @staticmethod
     def db_email_to_django_message(email):
-        message = pickle.loads(email.email_object)
+        print
+        print
+        print
+        print
+        print email.email_class
+        print
+        print
+        print
+        print
+        
+        message = load_class(email.email_class)()
+        message.__dict__ = json.loads(email.email_dump)
         return message
     def send_messages(self, email_messages):
         emails = map(DBEmailBackend.django_message_to_db_email, email_messages)
@@ -123,13 +137,13 @@ class DBEmailBackend(DecoratorBackend):
                 logger.debug('email already sent %s - %s' % ((email.to, email.subject)))
                 continue
             email_message = DBEmailBackend.db_email_to_django_message(email)
-            email.failed_send = False
+            email.send_succesful = False
             try:
                 super(DBEmailBackend, self).send_messages([email_message])
+                email.send_succesful = True
             except (smtplib.SMTPDataError, smtplib.SMTPRecipientsRefused) as e:
                 email.fail_message = unicode(e)
                 logger.warn('error sending email to %s - %s' % (email.to, e))
-                email.failed_send = True
             email.sent_on = timezone.now()
             email.sent = True
             email.save()

@@ -7,18 +7,19 @@ from marto_python.email import send_email
 random.seed()
 
 class EmailMessage(models.Model):
-    from_email  = models.EmailField(null=False, blank=False)
-    to          = models.TextField(null=True, blank=True) #comma separated list of recipients
-    cc          = models.TextField(null=True, blank=True) #comma separated list of recipients
-    bcc         = models.TextField(null=True, blank=True) #comma separated list of recipients
-    subject     = models.CharField(max_length=256, null=True, blank=True)
-    body        = models.TextField(null=True, blank=True)
-    created_on  = models.DateTimeField(auto_now_add=True)
-    sent        = models.BooleanField(default=False)
-    sent_on     = models.DateTimeField(null=True, blank=True)
-    failed_send = models.BooleanField(default=False)
-    fail_message = models.CharField(max_length=256, null=True, blank=True)
-    email_object = models.TextField(null=True, blank=True)
+    from_email      = models.CharField(max_length=256, null=False, blank=False)
+    to              = models.TextField(null=True, blank=True) #comma separated list of recipients
+    cc              = models.TextField(null=True, blank=True) #comma separated list of recipients
+    bcc             = models.TextField(null=True, blank=True) #comma separated list of recipients
+    subject         = models.CharField(max_length=256, null=True, blank=True)
+    body            = models.TextField(null=True, blank=True)
+    created_on      = models.DateTimeField(auto_now_add=True)
+    sent            = models.BooleanField(default=False)
+    sent_on         = models.DateTimeField(null=True, blank=True)
+    send_succesful  = models.BooleanField(default=False)
+    fail_message    = models.CharField(max_length=256, null=True, blank=True)
+    email_class     = models.CharField(max_length=256)
+    email_dump      = models.TextField()
     def __unicode__(self):
         return self.subject
 
