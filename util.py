@@ -99,7 +99,7 @@ def timestamp2datetime(ts):
 def datetime2timestamp(dt):
     return long(time.mktime(dt.timetuple()))
 
-    
+
 def get_param(request, param_name, empty_valid=False, default=None, encode_unicode=True):
     val = default
     if param_name in request.GET:
@@ -140,7 +140,7 @@ def get_pk(obj):
         return None
     else:
         return obj.pk
-    
+
 def upload_pic(uploaded_file, toFile):
     destination = open(os.path.join(settings.MEDIA_ROOT, toFile), 'wb+')
     for chunk in uploaded_file.chunks():
@@ -176,6 +176,12 @@ def list2comma_separated(the_list):
         s += str(e)
     return s
 
+def get_full_class(object):
+    '''
+    return the fully qualified class name for the object
+    '''
+    module = object.__module__
+    return ((module + '.') if module else '') + object.__class__.__name__
 
 def load_class(full_class_string):
     '''
