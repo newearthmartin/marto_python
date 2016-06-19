@@ -66,7 +66,7 @@ class DBEmailBackend(DecoratorBackend):
             email.save()
         if getattr(settings, "EMAIL_DB_BACKEND_SEND_IMMEDIATELY", False):
             logger.info('sending emails now')
-            self.do_send(emails)
+            self.send_emails(emails)
         else:
             logger.info('stored %d emails for sending later' % len(emails))
     def send_all(self):
@@ -77,13 +77,18 @@ class DBEmailBackend(DecoratorBackend):
         sends all emails in the queryset.
         will add the filter of sent=False
         '''
-        emails = emails_queryset.filter(sent=False)
+        self.send_emails(queryset.filter(sent=False).all())
+
+    def send_emails(self, emails):
+        '''
+        sends all db emails in list.
+        '''
         MAX_TODAY = getattr(settings, 'EMAIL_DB_BACKEND_MAX_DAILY_TOTAL', 2000)
         MAX_BY_SUBJECT = getattr(settings, 'EMAIL_DB_BACKEND_MAX_DAILY_BY_SUBJECT', 700)
 
         yesterday24hs = timezone.now() - datetime.timedelta(days=1)
         emails_sent_today = EmailMessage.objects.filter(sent=True).filter(sent_on__gt=yesterday24hs)
-        num_emails = emails.count()
+        num_emails = len(emails)
         num_emails_sent_today = emails_sent_today.count()
         total_allowed_emails = MAX_TODAY - num_emails_sent_today
         logger.info('Sending emails - already sent %d emails - can send %d more' % (num_emails_sent_today, total_allowed_emails))
@@ -94,7 +99,7 @@ class DBEmailBackend(DecoratorBackend):
         allowed_emails = []
         subjects = {}
         total_count = num_emails_sent_today
-        for email in emails.all():
+        for email in emails:
             if len(allowed_emails) >= total_allowed_emails:
                 logger.info('reached maximum total emails')
                 break
