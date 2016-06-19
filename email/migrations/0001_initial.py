@@ -20,7 +20,11 @@ class Migration(migrations.Migration):
                 ('bcc', models.TextField(null=True, blank=True)),
                 ('subject', models.CharField(max_length=255, null=True, blank=True)),
                 ('body', models.TextField(null=True, blank=True)),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
+                ('created_on', models.DateTimeField(auto_now_add=True)),
+                ('sent', models.BooleanField(default=False)),
+                ('sent_on', models.DateTimeField(null=True, blank=True)),
+                ('failed_send', models.BooleanField(default=False)),
+                ('email_object', models.TextField(null=True, blank=True)),
             ],
         ),
     ]
