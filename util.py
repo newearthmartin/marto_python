@@ -213,3 +213,26 @@ def is_site_view(path):
         return False
     else:
         return True
+
+def dict_encode(obj, encoder=None):
+    '''
+    useful for serializing objects to JSON
+    use: json.dumps(dict_encode(obj,encoder=some_encoder_func))
+    '''
+    if obj == None: return None
+    if type(obj) == dict:
+        rv = {}
+        for k, v in obj.iteritems():
+            rv[k] = dict_encode(v, encoder)
+        return rv
+    if hasattr(obj, '__iter__'):
+        rv = []
+        for elem in obj:
+            rv.append(dict_encode(elem, encoder))
+        return rv
+    if not hasattr(obj, '__dict__'):
+        return obj
+    if encoder:
+        val = encoder(obj)
+        if val: return dict_encode(val, encoder)
+    raise(Exception('Could not encode %s to dictionary' % type(obj)))
