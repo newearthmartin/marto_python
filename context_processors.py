@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from django.conf import settings as the_settings
 from django.contrib.sites.models import RequestSite
 from marto_python.util import is_site_view
@@ -12,7 +15,7 @@ def site_view_only(func):
 
 @site_view_only
 def messages(request):
-    #print 'MESSAGES CONTEXT PROCESSOR', request.path
+    logger.debug('MESSAGES CONTEXT PROCESSOR %s' %request.path)
     if request.session.has_key('messages'):
         msgs = request.session['messages']
         request.session['messages'] = None
@@ -22,15 +25,15 @@ def messages(request):
 
 @site_view_only
 def settings(request):
-    #print 'SETTINGS CONTEXT PROCESSOR', request.path
+    logger.debug('SETTINGS CONTEXT PROCESSOR %s' %request.path)
     return {'settings':the_settings}
 
 @site_view_only
 def site(request):
-    #print 'SITE CONTEXT PROCESSOR', request.path
+    logger.debug('SITE CONTEXT PROCESSOR %s' % request.path)
     return {'site': RequestSite(request)}
 
 @site_view_only
 def current_path(request):
-    #print 'CURRENT_PATH CONTEXT PROCESSOR', request.path
+    logger.debug('CURRENT_PATH CONTEXT PROCESSOR %s' % request.path)
     return {'current_path': request.get_full_path()}

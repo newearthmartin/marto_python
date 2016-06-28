@@ -178,6 +178,6 @@ class FilteringEmailBackend(DecoratorBackend):
                     status += ' - redirecting to %s' % list2comma_separated(self.redirect_to)
                 else:
                     status += ' - not redirecting'
-            print status
+            logger.info(status)
             if send:
                 super(FilteringEmailBackend, self).send_messages(email_messages)
