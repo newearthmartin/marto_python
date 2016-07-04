@@ -236,3 +236,12 @@ def dict_encode(obj, encoder=None):
         val = encoder(obj)
         if val: return dict_encode(val, encoder)
     raise(Exception('Could not encode %s to dictionary' % type(obj)))
+
+class RunInThread:
+    '''
+    decorator to run the method in a thread
+    '''
+    def __init__(self, f):
+        self.f = f
+    def __call__(self, *args, **kwargs):
+        Thread(target=lambda:self.f(*args, **kwargs)).start()
