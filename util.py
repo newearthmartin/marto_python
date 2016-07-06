@@ -58,7 +58,6 @@ def decode_and_decrypt(string):
     encrypted = base64.b16decode(string)
     return cipher.decrypt(encrypted).strip()
 
-
 def trim_digits(num, digits):
     digit_tens = pow(10, digits)
     trimmed = float(int(float(num) * digit_tens)) / digit_tens
@@ -151,6 +150,12 @@ def upload_pic(uploaded_file, toFile):
 def dist(lat0,lon0, lat1,lon1):
     dist2 = math.pow(float(lat1) - float(lat0), 2) + math.pow(float(lon1) - float(lon0),2)
     return math.sqrt(dist2)
+
+def read_lines(file, remove_empty=True):
+    lines = file.read().splitlines()
+    lines = map(lambda s: s.strip(), lines)
+    if remove_empty: filter(lambda s: s != '', lines)
+    return lines
 
 def staff():
     return User.objects.filter(is_staff=1)
