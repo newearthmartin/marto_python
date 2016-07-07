@@ -69,7 +69,7 @@ def restart():
 
 @task
 def deploy():
-    '''push, pull, collect static, restart'''
+    '''push, pull, collect static, migrate, restart'''
     require('hosts')
     require('remote_app_dir')
     require('venv_app')
