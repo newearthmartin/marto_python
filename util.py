@@ -28,20 +28,6 @@ def add_list_elem(d, key, elem):
     else:
         d[key] = [elem]
 
-def urlencode(string):
-    enc = urllib.urlencode({'':string})
-    return enc.split('=',1)[1]
-
-def urldecode(string):
-    ret = {}
-    for pair in string.split('&'):
-        pair = pair.split('=',1)
-        if len(pair) == 2:
-            ret[urllib.unquote_plus(pair[0])] = urllib.unquote_plus(pair[1])
-        else:
-            print 'problem urldecoding ' + pair
-    return ret
-
 cipher=DES.new(settings.SECRET_KEY[0:8], DES.MODE_ECB)
 
 def encrypt_and_encode(string):
