@@ -6,6 +6,7 @@ import urllib
 import importlib
 import time,datetime
 from string import atoi
+from decimal import Decimal
 from threading import Thread
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -48,6 +49,10 @@ def trim_digits(num, digits):
     digit_tens = pow(10, digits)
     trimmed = float(int(float(num) * digit_tens)) / digit_tens
     return trimmed
+
+def to_decimal(num, decimal_places):
+    PLACES = Decimal(10) ** (-1 * decimal_places)
+    return Decimal(num).quantize(PLACES)
 
 def str2hex(s):
     '''
