@@ -14,7 +14,7 @@ class EmailMessage(models.Model):
     subject         = models.CharField(max_length=256, null=True, blank=True)
     body            = models.TextField(null=True, blank=True)
     created_on      = models.DateTimeField(auto_now_add=True)
-    sent            = models.BooleanField(default=False)
+    sent            = models.BooleanField(default=False, db_index=True)
     sent_on         = models.DateTimeField(null=True, blank=True)
     send_succesful  = models.BooleanField(default=False)
     fail_message    = models.CharField(max_length=256, null=True, blank=True)
