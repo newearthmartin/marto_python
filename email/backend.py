@@ -128,15 +128,23 @@ class DBEmailBackend(DecoratorBackend):
                 continue
             email_message = DBEmailBackend.db_email_to_django_message(email)
             email.send_succesful = False
+            save = True
             try:
                 super(DBEmailBackend, self).send_messages([email_message])
                 email.send_succesful = True
             except (smtplib.SMTPDataError, smtplib.SMTPRecipientsRefused) as e:
                 email.fail_message = unicode(e)
                 logger.warn('error sending email to %s - %s' % (email.to, e))
-            email.sent_on = timezone.now()
-            email.sent = True
-            email.save()
+            except TypeError as e:
+                email.fail_message = unicode(e)
+                logger.warn('error sending email to %s - %s' % (email.to, e))
+            except:
+                save = False
+                logger.error('unknown exception sending email to %s - %s' % (email.to, e))
+            if save:
+                email.sent_on = timezone.now()
+                email.sent = True
+                email.save()
         logger.info('sending %d mails finished' % len(emails))
 
 class FilteringEmailBackend(DecoratorBackend):
