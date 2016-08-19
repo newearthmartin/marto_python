@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import urllib
 import urlparse
 
@@ -12,7 +15,7 @@ def urldecode(string):
         if len(pair) == 2:
             ret[urllib.unquote_plus(pair[0])] = urllib.unquote_plus(pair[1])
         else:
-            print 'problem urldecoding ' + pair
+            logger.error('problem urldecoding ' + pair)
     return ret
 
 def is_absolute(url):
