@@ -7,7 +7,7 @@ import importlib
 import base64
 import time,datetime
 
-from pytz import timezone
+from pytz import timezone as pytz_timezone
 from string import atoi
 from decimal import Decimal
 from threading import Thread
@@ -98,7 +98,7 @@ def make_tz_aware(dattetime, tz=None):
     makes the datetime tz aware, if no tz is passed, uses the tz from settings
     '''
     if not tz:
-        tz = timezone(settings.TIME_ZONE)
+        tz = pytz_timezone(settings.TIME_ZONE)
     return tz.localize(dattetime)
 
 
