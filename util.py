@@ -10,6 +10,7 @@ from decimal import Decimal
 from threading import Thread
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.utils import timezone
 from Crypto.Cipher import DES
 import base64
 
@@ -89,6 +90,14 @@ def timestamp2datetime(ts):
 
 def datetime2timestamp(dt):
     return long(time.mktime(dt.timetuple()))
+
+def make_tz_aware(dattetime, tz=None):
+    '''
+    makes the datetime tz aware, if no tz is passed, uses the tz from settings
+    '''
+    if not tz:
+        tz = timezone(settings.TIME_ZONE)
+    return tz.localize(dattetime)
 
 
 def get_param(request, param_name, empty_valid=False, default=None, encode_unicode=True):
