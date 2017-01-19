@@ -48,6 +48,9 @@ def decode_and_decrypt(string):
     encrypted = base64.b16decode(string)
     return cipher.decrypt(encrypted).strip()
 
+def replace_non_ascii(str, with_char='_'):
+    ''.join([i if ord(i) < 128 else with_char for i in str])
+
 def trim_digits(num, digits):
     digit_tens = pow(10, digits)
     trimmed = float(int(float(num) * digit_tens)) / digit_tens
@@ -184,6 +187,7 @@ def list2comma_separated(the_list):
         s += str(e)
     return s
 
+<<<<<<< HEAD
 def get_full_class(object):
     '''
     return the fully qualified class name for the object
@@ -191,6 +195,8 @@ def get_full_class(object):
     module = object.__module__
     return ((module + '.') if module else '') + object.__class__.__name__
 
+=======
+>>>>>>> f36fc98
 def load_class(full_class_string):
     '''
     dynamically load a class from a string
