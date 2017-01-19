@@ -187,7 +187,6 @@ def list2comma_separated(the_list):
         s += str(e)
     return s
 
-<<<<<<< HEAD
 def get_full_class(object):
     '''
     return the fully qualified class name for the object
@@ -195,8 +194,7 @@ def get_full_class(object):
     module = object.__module__
     return ((module + '.') if module else '') + object.__class__.__name__
 
-=======
->>>>>>> f36fc98
+
 def load_class(full_class_string):
     '''
     dynamically load a class from a string
