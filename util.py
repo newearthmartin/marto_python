@@ -57,6 +57,8 @@ def decode_and_decrypt(string):
     encrypted = base64.b16decode(string)
     return cipher.decrypt(encrypted).strip()
 
+def replace_non_ascii(str, with_char='_'):
+    ''.join([i if ord(i) < 128 else with_char for i in str])
 
 def trim_digits(num, digits):
     digit_tens = pow(10, digits)
@@ -175,7 +177,6 @@ def list2comma_separated(the_list):
         i += 1
         s += str(e)
     return s
-
 
 def load_class(full_class_string):
     '''
