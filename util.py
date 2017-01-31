@@ -13,8 +13,11 @@ from decimal import Decimal
 from threading import Thread
 from Crypto.Cipher import DES
 
+from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.validators import validate_email
+
 
 class ErrorCode:
     def __init__(self, code, message):
@@ -171,6 +174,13 @@ def staff_emails():
         if user.email:
             emails.append(user.email)
     return emails
+
+def is_valid_email(email):
+    try:
+        validate_email(email)
+        return True
+    except forms.ValidationError:
+        return False
 
 def is_list_or_tuple(x):
     return isinstance(x, (list,tuple))
