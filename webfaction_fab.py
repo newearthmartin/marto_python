@@ -110,4 +110,4 @@ def db_load():
     """
     local('tar xvfz data/db.tgz')
     local('./manage.py loaddata data/db.json')
-    local('rm data/db.json -rf')
+    local('rm data/db.json')
