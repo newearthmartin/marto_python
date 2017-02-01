@@ -7,6 +7,7 @@ def get_app_ssh_path():
 
 @task
 def prod():
+    print 'PRODUCTION environment'
     env.hosts = [fab_settings['PROD_SERVER']]
     env.remote_app_dir = os.path.join(fab_settings['APP_DIR'], fab_settings['APP_NAME'])
     env.remote_apache_dir = os.path.join(fab_settings['APP_DIR'], 'apache2')
@@ -70,7 +71,9 @@ def restart():
 
 @task
 def deploy():
-    """push, pull, collect static, restart"""
+    """
+    push, pull, collect static, restart
+    """
     require('hosts', provided_by=[prod])
     require('remote_app_dir', provided_by=[prod])
     require('venv_app', provided_by=[prod])
