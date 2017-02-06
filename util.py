@@ -60,6 +60,11 @@ def to_decimal(num, decimal_places):
     PLACES = Decimal(10) ** (-1 * decimal_places)
     return Decimal(num).quantize(PLACES)
 
+def get_or_add_new(dict, key, new_elem_func):
+    if key not in dict:
+        dict[key] = new_elem_func()
+    return dict[key]
+
 def str2hex(s):
     '''
     convert string to hex
