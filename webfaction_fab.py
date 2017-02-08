@@ -16,11 +16,10 @@ def prod():
 @task
 def test():
     print 'TEST environment'
-    env.hosts = [fabfile_settings.PROD_SERVER]
-    env.remote_app_dir = os.path.join(fabfile_settings.APP_DIR_TEST, fabfile_settings.APP_NAME)
-    env.remote_apache_dir = os.path.join(fabfile_settings.APP_DIR_TEST, 'apache2')
-    env.venv_app = fabfile_settings.VENV_SCRIPT_TEST
-
+    env.hosts = [fab_settings['PROD_SERVER']]
+    env.remote_app_dir = os.path.join(fab_settings['APP_DIR_TEST'], fab_settings['APP_NAME'])
+    env.remote_apache_dir = os.path.join(fab_settings['APP_DIR_TEST'], 'apache2')
+    env.venv_app = fab_settings['VENV_SCRIPT_TEST']
 
 @task
 def pip():
