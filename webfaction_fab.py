@@ -5,6 +5,10 @@ from fabfile_settings import fab_settings
 def get_app_ssh_path():
     return '%s:%s/%s' % (fab_settings['PROD_SERVER'], fab_settings['APP_DIR'], fab_settings['APP_NAME'])
 
+
+################ ENVIRONMENT ################
+
+
 @task
 def prod():
     print 'PRODUCTION environment'
@@ -14,14 +18,16 @@ def prod():
     env.venv_app = fab_settings['VENV_SCRIPT']
 
 @task
-def pip():
-    """
-    install requirements
-    """
-    require('hosts', provided_by=[prod])
-    require('venv_app', provided_by=[prod])
-    with prefix(env.venv_app):
-        run("pip install -r requirements.txt")
+def test():
+    print 'TEST environment'
+    env.hosts = [fab_settings['PROD_SERVER']]
+    env.remote_app_dir = os.path.join(fab_settings['APP_DIR_TEST'], fab_settings['APP_NAME'])
+    env.remote_apache_dir = os.path.join(fab_settings['APP_DIR_TEST'], 'apache2')
+    env.venv_app = fab_settings['VENV_SCRIPT_TEST']
+
+
+################ GIT ################
+
 
 @task
 def commit():
@@ -39,7 +45,22 @@ def push():
     local("git push origin master")
     with prefix(env.venv_app):
         run("git pull")
-        run("git submodule update --recursive --init")
+        run("git submodule update --init --recursive")
+
+
+################ DEPLOY ################
+
+
+@task
+def pip():
+    """
+    install requirements
+    """
+    require('hosts', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    with prefix(env.venv_app):
+        run("pip install -r requirements.txt")
+
 
 @task
 def collectstatic():
@@ -115,3 +136,16 @@ def db_load():
     local('tar xvfz data/db.tgz')
     local('./manage.py loaddata data/db.json')
     local('rm data/db.json')
+
+
+################ LET'S ENCRYPT ################
+
+
+@task
+def letsencrypt():
+    """
+    generates & installs let's encrypt HTTPS certs
+    """
+    require('hosts', provided_by=[prod])
+    with prefix(env.venv_app):
+        run('cd ~/le_certs; letsencrypt_webfaction --config le_config_all.yml')
