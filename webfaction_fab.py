@@ -39,6 +39,7 @@ def push():
     local("git push origin master")
     with prefix(env.venv_app):
         run("git pull")
+        run("git submodule update --recursive --init")
 
 @task
 def collectstatic():
