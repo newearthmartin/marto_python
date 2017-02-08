@@ -76,3 +76,12 @@ def deploy():
     collectstatic()
     migrate()
     restart()
+
+@task
+def letsencrypt():
+    """
+    generates & installs let's encrypt HTTPS certs
+    """
+    require('hosts', provided_by=[prod])
+    with prefix(env.venv_app):
+        run('cd ~/le_certs; letsencrypt_webfaction --config le_config_all.yml')
