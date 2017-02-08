@@ -2,6 +2,9 @@ import os
 from fabric.api import *
 from fabfile_settings import fab_settings
 
+def get_app_ssh_path():
+    return '%s:%s/%s' % (fab_settings['PROD_SERVER'], fab_settings['APP_DIR'], fab_settings['APP_NAME'])
+
 @task
 def prod():
     print 'PRODUCTION environment'
