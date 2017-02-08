@@ -5,6 +5,10 @@ from fabfile_settings import fab_settings
 def get_app_ssh_path():
     return '%s:%s/%s' % (fab_settings['PROD_SERVER'], fab_settings['APP_DIR'], fab_settings['APP_NAME'])
 
+
+################ ENVIRONMENT ################
+
+
 @task
 def prod():
     print 'PRODUCTION environment'
@@ -21,15 +25,9 @@ def test():
     env.remote_apache_dir = os.path.join(fab_settings['APP_DIR_TEST'], 'apache2')
     env.venv_app = fab_settings['VENV_SCRIPT_TEST']
 
-@task
-def pip():
-    """
-    install requirements
-    """
-    require('hosts', provided_by=[prod])
-    require('venv_app', provided_by=[prod])
-    with prefix(env.venv_app):
-        run("pip install -r requirements.txt")
+
+################ GIT ################
+
 
 @task
 def commit():
@@ -48,6 +46,21 @@ def push():
     with prefix(env.venv_app):
         run("git pull")
         run("git submodule update --init --recursive")
+
+
+################ DEPLOY ################
+
+
+@task
+def pip():
+    """
+    install requirements
+    """
+    require('hosts', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    with prefix(env.venv_app):
+        run("pip install -r requirements.txt")
+
 
 @task
 def collectstatic():
