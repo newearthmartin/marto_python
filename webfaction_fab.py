@@ -1,27 +1,29 @@
 import os
 from fabric.api import *
-import fabfile_settings
+from fabfile_settings import fab_settings
 
 @task
 def prod():
     print 'PRODUCTION environment'
-    env.hosts = [fabfile_settings.PROD_SERVER]
-    env.remote_app_dir = os.path.join(fabfile_settings.APP_DIR, fabfile_settings.APP_NAME)
-    env.remote_apache_dir = os.path.join(fabfile_settings.APP_DIR, 'apache2')
-    env.venv_app = fabfile_settings.VENV_SCRIPT
+    env.hosts = [fab_settings['PROD_SERVER']]
+    env.remote_app_dir = os.path.join(fab_settings['APP_DIR'], fab_settings['APP_NAME'])
+    env.remote_apache_dir = os.path.join(fab_settings['APP_DIR'], 'apache2')
+    env.venv_app = fab_settings['VENV_SCRIPT']
 
 @task
 def test():
     print 'TEST environment'
-    env.hosts = [fabfile_settings.PROD_SERVER]
-    env.remote_app_dir = os.path.join(fabfile_settings.APP_DIR_TEST, fabfile_settings.APP_NAME)
-    env.remote_apache_dir = os.path.join(fabfile_settings.APP_DIR_TEST, 'apache2')
-    env.venv_app = fabfile_settings.VENV_SCRIPT_TEST
+    env.hosts = [fab_settings['PROD_SERVER']]
+    env.remote_app_dir = os.path.join(fab_settings['APP_DIR_TEST'], fab_settings['APP_NAME'])
+    env.remote_apache_dir = os.path.join(fab_settings['APP_DIR_TEST'], 'apache2')
+    env.venv_app = fab_settings['VENV_SCRIPT_TEST']
 
 
 @task
 def pip():
-    '''install requirements'''
+    """
+    install requirements
+    """
     require('hosts')
     require('venv_app')
     with prefix(env.venv_app):
@@ -35,7 +37,9 @@ def commit():
 
 @task
 def push():
-    '''push and pull'''
+    """
+    push and pull
+    """
     require('hosts')
     require('venv_app')
     local("git push origin master")
@@ -45,7 +49,9 @@ def push():
 
 @task
 def collectstatic():
-    '''collect static files'''
+    """
+    collect static files
+    """
     require('hosts')
     require('venv_app')
     with prefix(env.venv_app):
@@ -53,7 +59,9 @@ def collectstatic():
 
 @task
 def migrate():
-    '''execute migrations'''
+    """
+    execute migrations
+    """
     require('hosts')
     require('venv_app')
     with prefix(env.venv_app):
@@ -61,14 +69,18 @@ def migrate():
 
 @task
 def restart():
-    """Restart apache on the server."""
+    """
+    Restart apache on the server.
+    """
     require('hosts')
     require('remote_apache_dir')
     run("%s/bin/restart;" % (env.remote_apache_dir))
 
 @task
 def deploy():
-    '''push, pull, collect static, migrate, restart'''
+    """
+    push, pull, collect static, migrate, restart
+    """
     require('hosts')
     require('remote_app_dir')
     require('venv_app')
