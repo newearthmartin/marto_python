@@ -80,7 +80,9 @@ def migrate():
     require('hosts', provided_by=[prod])
     require('venv_app', provided_by=[prod])
     with prefix(env.venv_app):
-        run("python manage.py migrate")
+        migrate_apps = fab_settings['MIGRATE_APPS']
+        if not migrate_apps: migrate_apps = ''
+        run("python manage.py migrate %s" % migrate_apps)
 
 @task
 def restart():
