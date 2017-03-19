@@ -35,7 +35,8 @@ def add_list_elem(d, key, elem):
 def to_map(list, key_func, val_func=lambda x: x):
     rv = {}
     for elem in list:
-        rv[key_func(elem)] = val_func(elem)
+        key = key_func(elem)
+        if key != None: rv[key] = val_func(elem)
     return rv
 
 cipher=DES.new(settings.SECRET_KEY[0:8], DES.MODE_ECB)
