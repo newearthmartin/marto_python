@@ -6,11 +6,9 @@ class OverwriteStorage(FileSystemStorage):
     """
     Changes the default django pattern and lets it overwrite existing files with the same name
     """
-    def get_available_name(self, name):
-        print name
+    def get_available_name(self, name, max_length=None):
         if self.exists(name):
             os.remove(os.path.join(settings.MEDIA_ROOT, name))
-        print name
         return name
 
 def upload_pic(uploaded_file, toFile):
