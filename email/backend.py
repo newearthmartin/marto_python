@@ -12,7 +12,8 @@ from django.utils import timezone
 from django.conf import settings
 
 from marto_python.email.models import EmailMessage
-from marto_python.util import list2comma_separated, get_full_class, load_class, setting
+from marto_python.util import get_full_class, load_class, setting
+from marto_python.collections import list2comma_separated
 
 class DecoratorBackend(BaseEmailBackend):
     '''abstract class for decorators to add functionality to EmailBackend in a decorator pattern'''
