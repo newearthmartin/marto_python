@@ -4,7 +4,7 @@ from django.template.loader import render_to_string
 from django.core.mail.message import EmailMessage
 from django.contrib.sites.models import Site
 from django.conf import settings
-from marto_python.util import is_list_or_tuple
+from marto_python.collections import is_list_or_tuple
 
 email_validator = EmailValidator()
 
