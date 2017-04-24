@@ -51,5 +51,5 @@ def dict_encode(obj, encoder=None):
         return obj
     if encoder:
         val = encoder(obj)
-        if val: return dict_encode(val, encoder)
+        if val != None: return dict_encode(val, encoder)
     raise(Exception('Could not encode %s to dictionary' % type(obj)))
