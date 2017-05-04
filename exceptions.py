@@ -2,7 +2,7 @@ import sys
 import logging
 logger = logging.getLogger(__name__)
 
-def log_exceptions(logger=None):
+def log_exceptions(logger=None, reraise=True):
     if not logger:
         logger = logging.getLogger(__name__)
     def logging_decorator(func):
@@ -12,6 +12,7 @@ def log_exceptions(logger=None):
             except:
                 e = sys.exc_info()
                 logger.error(e[1], exc_info=True)
-                raise
+                if reraise:
+                    raise
         return exception_logging_wrapper
     return logging_decorator
