@@ -7,8 +7,11 @@ def add_list_elem(d, key, elem):
 def to_dict(list, map_func):
     dict = {}
     for elem in list:
-        k, v = map_func(elem)
-        if k != None: dict[k] = v
+        kv = map_func(elem)
+        if kv:
+            k = kv[0]
+            v = kv[1]
+            if k != None: dict[k] = v
     return dict
 
 def get_or_add_new(dict, key, new_elem_func):
