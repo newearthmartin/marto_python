@@ -3,10 +3,14 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 
 class OverwriteStorage(FileSystemStorage):
-    """
-    Changes the default django pattern and lets it overwrite existing files with the same name
-    """
-    def get_available_name(self, name, max_length=None):
+
+    def get_available_name(self, name):
+        """
+        Returns a filename that's free on the target storage system, and
+        available for new content to be written to.
+        This file storage solves overwrite on upload problem.
+        Found at http://djangosnippets.org/snippets/976/
+        """
         if self.exists(name):
             os.remove(os.path.join(settings.MEDIA_ROOT, name))
         return name
