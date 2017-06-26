@@ -120,3 +120,16 @@ def is_site_view(path):
     else:
         return True
 
+
+def change(obj, properties_new_vals):
+    """
+    Changes the given property to newVal.
+    Returns true if the value actually changed
+    """
+    changed = False
+    for property, newVal in properties_new_vals.iteritems():
+        oldVal = getattr(obj, property)
+        if oldVal != newVal:
+            setattr(obj, property, newVal)
+            changed = True
+    return changed
