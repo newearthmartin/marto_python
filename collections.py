@@ -56,3 +56,8 @@ def dict_encode(obj, encoder=None):
         val = encoder(obj)
         if val != None: return dict_encode(val, encoder)
     raise(Exception('Could not encode %s to dictionary' % type(obj)))
+
+def first(condition, iterable):
+    for item in iterable:
+        if condition(item): return item
+    return None
