@@ -4,6 +4,7 @@ import json
 import datetime
 import smtplib
 import logging
+import traceback
 logger = logging.getLogger(__name__)
 
 from django.core.mail.backends.base import BaseEmailBackend
@@ -141,7 +142,7 @@ class DBEmailBackend(DecoratorBackend):
                 logger.warn('error sending email to %s - %s' % (email.to, e))
             except:
                 save = False
-                logger.error('unknown exception sending email to %s - %s' % (email.to, e))
+                logger.error('unknown exception sending email to %s' % email.to, exc_info=True)
             if save:
                 email.sent_on = timezone.now()
                 email.sent = True
