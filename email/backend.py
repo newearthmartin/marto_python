@@ -136,10 +136,10 @@ class DBEmailBackend(DecoratorBackend):
                 email.send_succesful = True
             except (smtplib.SMTPDataError, smtplib.SMTPRecipientsRefused) as e:
                 email.fail_message = unicode(e)
-                logger.warn('error sending email to %s - %s' % email.to, exc_info=True)
+                logger.warn('error sending email to %s' % email.to, exc_info=True)
             except TypeError as e:
                 email.fail_message = unicode(e)
-                logger.warn('error sending email to %s - %s' % email.to, exc_info=True)
+                logger.warn('error sending email to %s' % email.to, exc_info=True)
             except:
                 save = False
                 logger.error('unknown exception sending email to %s' % email.to, exc_info=True)
