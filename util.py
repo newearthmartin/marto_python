@@ -12,9 +12,13 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
 
 from .collections import add_list_elem
+
 
 class ErrorCode:
     def __init__(self, code, message):
