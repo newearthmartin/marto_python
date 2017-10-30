@@ -10,8 +10,10 @@ from pytz import timezone as pytz_timezone
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.validators import validate_email
 
 from .collections import add_list_elem
+
 
 class ErrorCode:
     def __init__(self, code, message):
@@ -71,6 +73,10 @@ def staff_emails():
             emails.append(user.email)
     return emails
 
+def is_valid_email(email):
+    try: validate_email(email)
+    except: return False
+    return True
 
 def get_full_class(object):
     """
