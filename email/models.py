@@ -2,7 +2,7 @@ import random
 from django import forms
 from django.db import models
 from django.utils.crypto import get_random_string
-from marto_python.email import send_email
+from marto_python.email.email import send_email
 
 random.seed()
 
