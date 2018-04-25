@@ -142,7 +142,11 @@ class DBEmailBackend(DecoratorBackend):
                 logger.warn('error sending email to %s' % email.to, exc_info=True)
             except:
                 save = False
-                logger.error('unknown exception sending email to %s' % email.to, exc_info=True)
+                msg = 'unknown exception sending email to %s' % email.to
+                if filter(lambda name, address: address.lower() == email.to.lower(), settings.ADMINS):
+                    logger.warn(msg, exc_info=True)
+                else:
+                    logger.error(msg, exc_info=True)
             if save:
                 email.sent_on = timezone.now()
                 email.sent = True
