@@ -1,14 +1,11 @@
 # encoding: utf-8
-import email
 import json
 import datetime
 import smtplib
 import logging
-import traceback
 logger = logging.getLogger(__name__)
 
 from django.core.mail.backends.base import BaseEmailBackend
-from django.core import mail
 from django.utils import timezone
 from django.conf import settings
 
@@ -139,6 +136,9 @@ class DBEmailBackend(DecoratorBackend):
                 logger.warn('error sending email to %s' % email.to, exc_info=True)
             except TypeError as e:
                 email.fail_message = unicode(e)
+                logger.warn('error sending email to %s' % email.to, exc_info=True)
+            except smtplib.SMTPConnectError as e:
+                save = False
                 logger.warn('error sending email to %s' % email.to, exc_info=True)
             except:
                 save = False
