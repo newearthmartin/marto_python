@@ -14,6 +14,14 @@ def to_dict(list, map_func):
             if k != None: dict[k] = v
     return dict
 
+def to_list(dict, sorting_key_fn=None):
+    l = []
+    for k,v in dict.iteritems():
+        l.append((k,v))
+    if sorting_key_fn:
+        l.sort(key=sorting_key_fn)
+    return l
+
 def get_or_add_new(dict, key, new_elem_func):
     if key not in dict:
         dict[key] = new_elem_func()
