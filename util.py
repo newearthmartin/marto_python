@@ -56,6 +56,11 @@ def custom_range(l,range_first=None,range_last=None):
     else:
         return l
 
+def daterange(start_date, end_date):
+    delta = int((end_date - start_date).days)
+    for n in xrange(0, delta):
+        yield start_date + datetime.timedelta(n)
+
 def get_pk(obj):
     return obj.pk if obj else None
 
