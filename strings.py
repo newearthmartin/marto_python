@@ -30,6 +30,13 @@ def trim_digits(num, digits):
     trimmed = float(int(float(num) * digit_tens)) / digit_tens
     return trimmed
 
+def to_int(str):
+    if not str: return None
+    try:
+        return int(str)
+    except:
+        return None
+
 def to_decimal(num, decimal_places):
     PLACES = Decimal(10) ** (-1 * decimal_places)
     return Decimal(num).quantize(PLACES)
