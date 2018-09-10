@@ -103,9 +103,17 @@ def deploy():
     require('remote_app_dir', provided_by=[prod])
     require('venv_app', provided_by=[prod])
     push()
+    deployDjango()
+
+@task
+def deployDjango():
+    require('hosts', provided_by=[prod])
+    require('remote_app_dir', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
     collectstatic()
     migrate()
     restart()
+
 
 ################ DATA ################
 
