@@ -16,14 +16,19 @@ from marto_python.collections import list2comma_separated
 class DecoratorBackend(BaseEmailBackend):
     '''abstract class for decorators to add functionality to EmailBackend in a decorator pattern'''
     inner_backend = None
-    def __init__(self, inner_backend_settings_property):
-        class_name = getattr(settings, inner_backend_settings_property, 'django.core.mail.backends.smtp.EmailBackend')
-        logger.debug('inner backend: ' + class_name)
-        if class_name:
-            self.setInnerBackend( load_class(class_name)() )
 
-    def setInnerBackend(self, backend):
+    def __init__(self, *args, **kwargs):
+        super(DecoratorBackend, self).__init__(*args, **kwargs)
+        backend_instance = kwargs.get('inner_backend')
+        backend_class = kwargs.get('inner_backend_class')
+        if backend_instance: self.set_inner_backend(backend_instance)
+        elif backend_class: self.set_inner_backend_class(backend_class)
+
+    def set_inner_backend(self, backend):
         self.inner_backend = backend
+
+    def set_inner_backend_class(self, backend_class):
+        self.set_inner_backend(load_class(backend_class)())
 
     def send_messages(self, email_messages):
         if self.inner_backend:
@@ -36,9 +41,21 @@ class DecoratorBackend(BaseEmailBackend):
         if self.inner_backend:
             self.inner_backend.close()
 
+class StackedEmailBackend(DecoratorBackend):
+    def __init__(self, *args, **kwargs):
+        inner_backend = None
+        for backend_class in settings.EMAIL_BACKEND_STACK:
+            inner_backend = load_class(backend_class)(*args, inner_backend=inner_backend, **kwargs)
+        super(StackedEmailBackend, self).__init__(*args, inner_backend=inner_backend, **kwargs)
+
+
 class DBEmailBackend(DecoratorBackend):
     def __init__(self, *args, **kwargs):
-        super(DBEmailBackend, self).__init__('EMAIL_DB_BACKEND_INNER_BACKEND')
+        super(DBEmailBackend, self).__init__(*args, **kwargs)
+        if not self.inner_backend:
+            class_name = getattr(settings, 'EMAIL_DB_BACKEND_INNER_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+            if class_name:
+                self.set_inner_backend_class(class_name)
 
     @staticmethod
     def django_message_to_db_email(message):
@@ -159,7 +176,8 @@ class FilteringEmailBackend(DecoratorBackend):
     redirect_to = []
 
     def __init__(self, *args, **kwargs):
-        super(FilteringEmailBackend, self).__init__('EMAIL_FILTERING_BACKEND_INNER_BACKEND')
+        class_name = getattr(settings, 'EMAIL_FILTERING_BACKEND_INNER_BACKEND')
+        super(FilteringEmailBackend, self).__init__(*args, inner_backend_class=class_name, **kwargs)
         self.filter = setting('EMAIL_FILTERING_BACKEND_FILTER', default=True)
         self.pass_emails     = setting('EMAIL_FILTERING_BACKEND_PASS_EMAILS'    , default=[])
         self.redirect_to     = setting('EMAIL_FILTERING_BACKEND_REDIRECT_TO'    , default=[])
@@ -173,12 +191,10 @@ class FilteringEmailBackend(DecoratorBackend):
                     if address not in self.pass_emails:
                         send = False
             status = ''
-            message_string = '%s (to:%s cc:%s bcc:%s)' %  (
-                                                          message.subject,
+            message_string = '%s (to:%s cc:%s bcc:%s)' %  (message.subject,
                                                           list2comma_separated(message.to),
                                                           list2comma_separated(message.cc),
-                                                          list2comma_separated(message.bcc),
-                                                          )
+                                                          list2comma_separated(message.bcc))
             if send:
                 status = 'SENDING E-MAIL - ' + message_string
             else:
