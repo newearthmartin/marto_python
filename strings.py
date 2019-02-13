@@ -6,7 +6,8 @@ from Crypto.Cipher import DES
 
 from django.conf import settings
 
-cipher=DES.new(settings.SECRET_KEY[0:8], DES.MODE_ECB)
+cipher = DES.new(settings.SECRET_KEY[0:8], DES.MODE_ECB)
+
 
 def encrypt_and_encode(string):
     """
@@ -18,28 +19,34 @@ def encrypt_and_encode(string):
     encrypted = cipher.encrypt(string)
     return base64.b16encode(encrypted)
 
+
 def decode_and_decrypt(string):
     encrypted = base64.b16decode(string)
     return cipher.decrypt(encrypted).strip()
 
-def replace_non_ascii(str, with_char='_'):
-    return ''.join([i if ord(i) < 128 else with_char for i in str])
+
+def replace_non_ascii(string, with_char='_'):
+    return ''.join([i if ord(i) < 128 else with_char for i in string])
+
 
 def trim_digits(num, digits):
     digit_tens = pow(10, digits)
     trimmed = float(int(float(num) * digit_tens)) / digit_tens
     return trimmed
 
-def to_int(str):
-    if not str: return None
+
+def to_int(string):
+    if not string: return None
     try:
-        return int(str)
+        return int(string)
     except:
         return None
 
+
 def to_decimal(num, decimal_places):
-    PLACES = Decimal(10) ** (-1 * decimal_places)
-    return Decimal(num).quantize(PLACES)
+    places = Decimal(10) ** (-1 * decimal_places)
+    return Decimal(num).quantize(places)
+
 
 def str2hex(s):
     """
@@ -51,7 +58,8 @@ def str2hex(s):
         if len(hv) == 1:
             hv = '0'+hv
         lst.append(hv)
-    return reduce(lambda x,y:x+y, lst)
+    return reduce(lambda x, y: x + y, lst)
+
 
 def hex2str(s):
     """
@@ -59,8 +67,10 @@ def hex2str(s):
     """
     return s and chr(int(s[:2], base=16)) + hex2str(s[2:]) or ''
 
+
 def empty_then_none(string):
     return string if string else None
+
 
 def none_then_empty(string):
     return string if string else ''
