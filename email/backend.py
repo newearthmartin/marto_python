@@ -3,18 +3,19 @@ import json
 import datetime
 import smtplib
 import logging
-logger = logging.getLogger(__name__)
 
-from django.core.mail.backends.base import BaseEmailBackend
-from django.utils import timezone
 from django.conf import settings
+from django.utils import timezone
+from django.core.mail.backends.base import BaseEmailBackend
 
 from marto_python.email.models import EmailMessage
 from marto_python.util import get_full_class, load_class, setting
 from marto_python.collections import list2comma_separated
 
+logger = logging.getLogger(__name__)
+
 class DecoratorBackend(BaseEmailBackend):
-    '''abstract class for decorators to add functionality to EmailBackend in a decorator pattern'''
+    """abstract class for decorators to add functionality to EmailBackend in a decorator pattern"""
     inner_backend = None
 
     def __init__(self, *args, **kwargs):
@@ -63,7 +64,6 @@ class DBEmailBackend(DecoratorBackend):
         message.connection = None
         dump = json.dumps(message.__dict__)
         message.connection = connection
-
         email = EmailMessage()
         email.from_email    = message.from_email
         email.subject       = message.subject
@@ -73,13 +73,14 @@ class DBEmailBackend(DecoratorBackend):
         email.bcc           = list2comma_separated(message.bcc)
         email.email_class   = get_full_class(message)
         email.email_dump    = dump
-
         return email
+
     @staticmethod
     def db_email_to_django_message(email):
         message = load_class(email.email_class)()
         message.__dict__ = json.loads(email.email_dump)
         return message
+
     def send_messages(self, email_messages):
         emails = map(DBEmailBackend.django_message_to_db_email, email_messages)
         for email in emails:
@@ -89,48 +90,47 @@ class DBEmailBackend(DecoratorBackend):
             self.send_emails(emails)
         else:
             logger.info('stored %d emails for sending later' % len(emails))
+
     def send_all(self):
         self.send_queryset(EmailMessage.objects)
 
     def send_queryset(self, emails_queryset):
-        '''
+        """
         sends all emails in the queryset.
         will add the filter of sent=False
-        '''
+        """
         self.send_emails(emails_queryset.filter(sent=False).all())
 
     def send_emails(self, emails):
-        '''
+        """
         sends all db emails in list.
-        '''
-        MAX_TODAY = getattr(settings, 'EMAIL_DB_BACKEND_MAX_DAILY_TOTAL', 2000)
-        MAX_BY_SUBJECT = getattr(settings, 'EMAIL_DB_BACKEND_MAX_DAILY_BY_SUBJECT', 700)
+        """
+        max_today = getattr(settings, 'EMAIL_DB_BACKEND_MAX_DAILY_TOTAL', 2000)
+        max_by_subject = getattr(settings, 'EMAIL_DB_BACKEND_MAX_DAILY_BY_SUBJECT', 700)
 
         yesterday24hs = timezone.now() - datetime.timedelta(days=1)
         emails_sent_today = EmailMessage.objects.filter(sent=True).filter(sent_on__gt=yesterday24hs)
-        num_emails = len(emails)
         num_emails_sent_today = emails_sent_today.count()
-        total_allowed_emails = MAX_TODAY - num_emails_sent_today
+        total_allowed_emails = max_today - num_emails_sent_today
         logger.info('Sending emails - already sent %d emails - can send %d more' % (num_emails_sent_today, total_allowed_emails))
         if total_allowed_emails < 0:
-            logger.error('Sent %d emails but only %d were allowed!' % (num_emails_sent_today, MAX_TODAY))
+            logger.error('Sent %d emails but only %d were allowed!' % (num_emails_sent_today, max_today))
             return
 
         allowed_emails = []
         subjects = {}
-        total_count = num_emails_sent_today
         for email in emails:
             if len(allowed_emails) >= total_allowed_emails:
                 logger.info('reached maximum total emails')
                 break
             subject = email.subject
             count = subjects[subject] if subject in subjects else emails_sent_today.filter(subject=subject).count()
-            logger.debug('Already sent %d (maximum %d) for subject \'%s\'' % (count, MAX_BY_SUBJECT, subject))
-            if count >= MAX_BY_SUBJECT:
+            logger.debug('Already sent %d (maximum %d) for subject \'%s\'' % (count, max_by_subject, subject))
+            if count >= max_by_subject:
                 continue
             count += 1
             subjects[subject] = count
-            logger.info('email with subject %s ok for sending - updated count %d - maximum %d' % (subject, count, MAX_BY_SUBJECT))
+            logger.info('email with subject %s ok for sending - updated count %d - maximum %d' % (subject, count, max_by_subject))
             allowed_emails.append(email)
 
         if allowed_emails: self.do_send(allowed_emails)
@@ -140,14 +140,14 @@ class DBEmailBackend(DecoratorBackend):
         for email in emails:
             #check again if its not sent, for concurrency
             if email.sent:
-                logger.debug('email already sent %s - %s' % ((email.to, email.subject)))
+                logger.debug('email already sent %s - %s' % (email.to, email.subject))
                 continue
             email_message = DBEmailBackend.db_email_to_django_message(email)
             email.sent = False
-            email.send_succesful = False
+            email.send_successful = False
             try:
                 super(DBEmailBackend, self).send_messages([email_message])
-                email.send_succesful = True
+                email.send_successful = True
                 email.sent = True
             except (smtplib.SMTPDataError, smtplib.SMTPRecipientsRefused) as e:
                 email.fail_message = unicode(e)
@@ -157,7 +157,7 @@ class DBEmailBackend(DecoratorBackend):
                 email.fail_message = unicode(e)
                 logger.warn('error sending email to %s' % email.to, exc_info=True)
                 email.sent = True
-            except smtplib.SMTPConnectError as e:
+            except smtplib.SMTPConnectError:
                 logger.warn('error sending email to %s' % email.to, exc_info=True)
             except:
                 msg = 'unknown exception sending email to %s' % email.to
@@ -169,6 +169,7 @@ class DBEmailBackend(DecoratorBackend):
                 email.sent_on = timezone.now()
                 email.save()
         logger.info('sending %d emails finished' % len(emails))
+
 
 class FilteringEmailBackend(DecoratorBackend):
     filter = True
@@ -190,7 +191,6 @@ class FilteringEmailBackend(DecoratorBackend):
                 for address in all_recipients:
                     if address not in self.pass_emails:
                         send = False
-            status = ''
             message_string = '%s (to:%s cc:%s bcc:%s)' %  (message.subject,
                                                           list2comma_separated(message.to),
                                                           list2comma_separated(message.cc),

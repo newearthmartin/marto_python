@@ -2,6 +2,7 @@ import os
 from fabric.api import *
 from fabfile_settings import fab_settings
 
+
 def get_app_ssh_path():
     return '%s:%s/%s' % (fab_settings['PROD_SERVER'], fab_settings['APP_DIR'], fab_settings['APP_NAME'])
 
@@ -16,6 +17,7 @@ def prod():
     env.remote_app_dir = os.path.join(fab_settings['APP_DIR'], fab_settings['APP_NAME'])
     env.remote_apache_dir = os.path.join(fab_settings['APP_DIR'], 'apache2')
     env.venv_app = fab_settings['VENV_SCRIPT']
+
 
 @task
 def test():
@@ -35,6 +37,7 @@ def commit():
     local("git add -A && git commit -m \"%s\"" % message)
     print "Changes have been pushed to remote repository..."
 
+
 @task
 def push():
     """
@@ -42,7 +45,7 @@ def push():
     """
     require('hosts', provided_by=[prod])
     require('venv_app', provided_by=[prod])
-    local("git submodule foreach git push")
+    #local("git submodule foreach git push")
     local("git push origin master")
     with prefix(env.venv_app):
         run("git pull")
@@ -73,6 +76,7 @@ def collectstatic():
     with prefix(env.venv_app):
         run("python manage.py collectstatic --noinput")
 
+
 @task
 def migrate():
     """
@@ -85,6 +89,7 @@ def migrate():
         if not migrate_apps: migrate_apps = ''
         run("python manage.py migrate %s" % migrate_apps)
 
+
 @task
 def restart():
     """
@@ -92,7 +97,8 @@ def restart():
     """
     require('hosts', provided_by=[prod])
     require('remote_apache_dir', provided_by=[prod])
-    run("%s/bin/restart;" % (env.remote_apache_dir))
+    run("%s/bin/restart;" % env.remote_apache_dir)
+
 
 @task
 def deploy():
@@ -103,10 +109,11 @@ def deploy():
     require('remote_app_dir', provided_by=[prod])
     require('venv_app', provided_by=[prod])
     push()
-    deployDjango()
+    deploy_django()
+
 
 @task
-def deployDjango():
+def deploy_django():
     require('hosts', provided_by=[prod])
     require('remote_app_dir', provided_by=[prod])
     require('venv_app', provided_by=[prod])
@@ -117,12 +124,14 @@ def deployDjango():
 
 ################ DATA ################
 
+
 @task
 def media_sync():
     """
     Download production media files to local computer
     """
     local('rsync -avz %s/media/ media/' % get_app_ssh_path())
+
 
 @task
 def db_dump():
@@ -138,6 +147,7 @@ def db_dump():
         run("rm data/db.json")
     local("mkdir -p data")
     local('scp %s/data/db.tgz data' % get_app_ssh_path())
+
 
 @task
 def db_load():

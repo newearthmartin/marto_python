@@ -2,16 +2,17 @@ import sys
 import logging
 logger = logging.getLogger(__name__)
 
-def log_exceptions(logger=None, reraise=True):
-    if not logger:
-        logger = logging.getLogger(__name__)
+
+def log_exceptions(lggr=None, reraise=True):
+    if not lggr: lggr = logger
+
     def logging_decorator(func):
         def exception_logging_wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
             except:
                 e = sys.exc_info()
-                logger.error(e[1], exc_info=True)
+                lggr.error(e[1], exc_info=True)
                 if reraise:
                     raise
         return exception_logging_wrapper
