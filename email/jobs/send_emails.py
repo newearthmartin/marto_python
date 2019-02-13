@@ -1,10 +1,8 @@
 import logging
+from django_extensions.management.jobs import HourlyJob
+from marto_python.email.backend import DBEmailBackend
 
 logger = logging.getLogger(__name__)
-
-from django_extensions.management.jobs import HourlyJob
-
-from marto_python.email.backend import DBEmailBackend
 
 
 class Job(HourlyJob):
