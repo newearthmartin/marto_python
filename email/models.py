@@ -1,38 +1,39 @@
 import random
-from django import forms
 from django.db import models
 from django.utils.crypto import get_random_string
 from marto_python.email.email import send_email
 
 random.seed()
 
+
 class EmailMessage(models.Model):
     from_email      = models.CharField(max_length=256, null=False, blank=False)
-    to              = models.TextField(null=True, blank=True) #comma separated list of recipients
-    cc              = models.TextField(null=True, blank=True) #comma separated list of recipients
-    bcc             = models.TextField(null=True, blank=True) #comma separated list of recipients
+    to              = models.TextField(null=True, blank=True)  # comma separated list of recipients
+    cc              = models.TextField(null=True, blank=True)  # comma separated list of recipients
+    bcc             = models.TextField(null=True, blank=True)  # comma separated list of recipients
     subject         = models.CharField(max_length=256, null=True, blank=True)
     body            = models.TextField(null=True, blank=True)
     created_on      = models.DateTimeField(auto_now_add=True)
     sent            = models.BooleanField(default=False, db_index=True)
     sent_on         = models.DateTimeField(null=True, blank=True, db_index=True)
-    send_succesful  = models.BooleanField(default=False)
+    send_successful = models.BooleanField(default=False)
     fail_message    = models.CharField(max_length=256, null=True, blank=True)
     email_class     = models.CharField(max_length=256)
     email_dump      = models.TextField()
     def __unicode__(self):
         return self.subject
 
-#for mixing into the UserProfile model
 class EmailConfirmationMixin(models.Model):
+    """ For mixing into the UserProfile model """
     class Meta:
         abstract = True
-    email_confirmed             = models.BooleanField(blank=False, null=False, default=False, verbose_name='email confirmed')
-    email_confirmation_key      = models.CharField(max_length=40, blank=True, null=True, default=None, verbose_name='email confirmation key' )
+    email_confirmed = models.BooleanField(blank=False, null=False, default=False, verbose_name='email confirmed')
+    email_confirmation_key = models.CharField(max_length=40, blank=True, null=True, default=None, verbose_name='email confirmation key')
 
-    #users should override this method if user is different from "self.user"
+    # users should override this method if user is different from "self.user"
     def get_user(self):
         return self.user
+
     def get_primary_email(self):
         return self.get_user().email
 
