@@ -1,4 +1,5 @@
 # coding: utf-8
+# FIXME: move to club
 
 from django import forms
 from django.db import models
@@ -27,13 +28,14 @@ class Pagina(models.Model):
                 'contenido': TinyMCE(attrs={'cols': 100, 'rows': 50}),
             }
 
+
 class Menu(models.Model):
     class Meta:
         verbose_name = 'menú'
         verbose_name_plural = 'menús'
     titulo      = models.CharField(max_length=255)
     seccion     = models.CharField(max_length=10, choices=settings.MENU_SECTIONS)
-    padre       = models.ForeignKey('Menu', null=True,blank=True, related_name='children')
+    padre       = models.ForeignKey('Menu', null=True, blank=True, related_name='children')
     indice      = models.IntegerField(default=0)
     pagina      = models.ForeignKey('Pagina', null=True, blank=True)
     url         = models.CharField(max_length=255, null=True, blank=True)
@@ -56,14 +58,12 @@ class Menu(models.Model):
         list_display = ['__unicode__', 'seccion', 'total_index', 'pagina', 'total_url']
         exclude      = ['total_url']
     @staticmethod
-    def pre_save(sender, **kwargs):
+    def pre_save(_, **kwargs):
         menu = kwargs['instance']
         menu.total_url = menu.get_url()        
         if menu.pagina:
             menu.url = None
-        if menu.url \
-                 and not menu.url.startswith('http') \
-                 and not menu.url.startswith('/'):
+        if menu.url and not menu.url.startswith('http') and not menu.url.startswith('/'):
             menu.url = '/' + menu.url
 pre_save.connect(Menu.pre_save, sender=Menu)
 
@@ -74,7 +74,7 @@ class MenuInline(admin.TabularInline):
 class PaginaAdmin(admin.ModelAdmin):
     form = Pagina.AdminForm
     list_display = ['__unicode__', 'url', 'menu_index']
-    inlines = [MenuInline,]
+    inlines = [MenuInline]
     def menu_index(self, pagina):
         if pagina.menu_set.count() == 0:
             return 'Sin menu'
