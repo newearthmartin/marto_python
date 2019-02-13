@@ -1,7 +1,7 @@
 import base64
 
-from string import atoi
 from decimal import Decimal
+from functools import reduce
 from Crypto.Cipher import DES
 
 from django.conf import settings
@@ -57,7 +57,7 @@ def hex2str(s):
     """
     convert hex repr to string
     """
-    return s and chr(atoi(s[:2], base=16)) + hex2str(s[2:]) or ''
+    return s and chr(int(s[:2], base=16)) + hex2str(s[2:]) or ''
 
 def empty_then_none(string):
     return string if string else None
