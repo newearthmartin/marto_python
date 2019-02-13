@@ -1,10 +1,9 @@
 # encoding: utf-8
 
 import math
-import os
-import urllib
 import importlib
-import time,datetime
+import time
+import datetime
 
 from pytz import timezone as pytz_timezone
 
@@ -15,6 +14,7 @@ from django.core.validators import validate_email
 
 from .collections import add_list_elem
 
+
 class ErrorCode:
     def __init__(self, code, message):
         self.code = code
@@ -22,15 +22,19 @@ class ErrorCode:
     code = 0
     message = None
 
+
 def add_message(request, message):
     add_list_elem(request.session, 'messages', message)
+
 
 def timestamp2datetime(ts):
     ts = float(ts)
     return datetime.datetime.fromtimestamp(ts)
 
+
 def datetime2timestamp(dt):
     return long(time.mktime(dt.timetuple()))
+
 
 def make_tz_aware(dattetime, tz=None):
     """
@@ -41,7 +45,7 @@ def make_tz_aware(dattetime, tz=None):
     return tz.localize(dattetime)
 
 
-def custom_range(l,range_first=None,range_last=None):
+def custom_range(l, range_first=None, range_last=None):
     if range_first is not None:
         range_first = int(range_first)
     if range_last is not None:
@@ -56,20 +60,25 @@ def custom_range(l,range_first=None,range_last=None):
     else:
         return l
 
+
 def daterange(start_date, end_date):
     delta = int((end_date - start_date).days)
     for n in xrange(0, delta):
         yield start_date + datetime.timedelta(n)
 
+
 def get_pk(obj):
     return obj.pk if obj else None
 
-def dist(lat0,lon0, lat1,lon1):
+
+def dist(lat0, lon0, lat1, lon1):
     dist2 = math.pow(float(lat1) - float(lat0), 2) + math.pow(float(lon1) - float(lon0),2)
     return math.sqrt(dist2)
 
+
 def staff():
     return User.objects.filter(is_staff=1)
+
 
 def staff_emails():
     emails = []
@@ -78,6 +87,7 @@ def staff_emails():
             emails.append(user.email)
     return emails
 
+
 def is_valid_email(email):
     try:
         validate_email(email)
@@ -85,12 +95,13 @@ def is_valid_email(email):
     except forms.ValidationError:
         return False
 
-def get_full_class(object):
+
+def get_full_class(obj):
     """
     return the fully qualified class name for the object
     """
-    module = object.__module__
-    return ((module + '.') if module else '') + object.__class__.__name__
+    module = obj.__module__
+    return ((module + '.') if module else '') + obj.__class__.__name__
 
 
 def load_class(full_class_string):
@@ -105,6 +116,7 @@ def load_class(full_class_string):
     # Finally, we retrieve the Class
     return getattr(module, class_str)
 
+
 def setting(property_name, default=None):
     try:
         val = getattr(settings, property_name)
@@ -113,7 +125,8 @@ def setting(property_name, default=None):
         val = default
     return val
 
-#TODO: parametrizar en settings
+
+# TODO: parametrizar en settings
 def is_site_view(path):
     if path.startswith(settings.MEDIA_URL) or path.startswith(settings.STATIC_URL):
         return False
@@ -131,9 +144,9 @@ def change(obj, properties_new_vals):
     Returns true if the value actually changed
     """
     changed = False
-    for property, newVal in properties_new_vals.iteritems():
-        oldVal = getattr(obj, property)
-        if oldVal != newVal:
-            setattr(obj, property, newVal)
+    for prop, new_val in properties_new_vals.iteritems():
+        old_val = getattr(obj, prop)
+        if old_val != new_val:
+            setattr(obj, prop, new_val)
             changed = True
     return changed
