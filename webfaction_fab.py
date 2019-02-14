@@ -45,7 +45,7 @@ def push():
     """
     require('hosts', provided_by=[prod])
     require('venv_app', provided_by=[prod])
-    #local("git submodule foreach git push")
+    # local("git submodule foreach git push")
     local("git push origin master")
     with prefix(env.venv_app):
         run("git pull")
