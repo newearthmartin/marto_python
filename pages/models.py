@@ -41,7 +41,7 @@ class Menu(models.Model):
     url         = models.CharField(max_length=255, null=True, blank=True)
     total_url   = models.CharField(max_length=255, null=True, blank=True)
     def __unicode__(self):
-        unicode_padre = (unicode(self.padre) + '->') if self.padre else ''
+        unicode_padre = (str(self.padre) + '->') if self.padre else ''
         return unicode_padre + self.titulo
     def get_url(self):
         if self.pagina:
