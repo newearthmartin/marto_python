@@ -1,4 +1,3 @@
-# encoding: utf-8
 import json
 import datetime
 import smtplib
@@ -82,14 +81,14 @@ class DBEmailBackend(DecoratorBackend):
         return message
 
     def send_messages(self, email_messages):
-        emails = map(DBEmailBackend.django_message_to_db_email, email_messages)
-        for email in emails:
+        db_emails = map(DBEmailBackend.django_message_to_db_email, email_messages)
+        for email in db_emails:
             email.save()
         if getattr(settings, "EMAIL_DB_BACKEND_SEND_IMMEDIATELY", False):
             logger.info('sending emails now')
-            self.send_emails(emails)
+            self.send_emails(db_emails)
         else:
-            logger.info('stored %d emails for sending later' % len(emails))
+            logger.info('stored %d emails for sending later' % len(db_emails))
 
     def send_all(self):
         self.send_queryset(EmailMessage.objects)
@@ -150,19 +149,19 @@ class DBEmailBackend(DecoratorBackend):
                 email.send_successful = True
                 email.sent = True
             except (smtplib.SMTPDataError, smtplib.SMTPRecipientsRefused) as e:
-                email.fail_message = unicode(e)
-                logger.warn('error sending email to %s' % email.to, exc_info=True)
+                email.fail_message = str(e)
+                logger.warning('error sending email to %s' % email.to, exc_info=True)
                 email.sent = True
             except TypeError as e:
-                email.fail_message = unicode(e)
-                logger.warn('error sending email to %s' % email.to, exc_info=True)
+                email.fail_message = str(e)
+                logger.warning('error sending email to %s' % email.to, exc_info=True)
                 email.sent = True
             except smtplib.SMTPConnectError:
-                logger.warn('error sending email to %s' % email.to, exc_info=True)
+                logger.warning('error sending email to %s' % email.to, exc_info=True)
             except:
                 msg = 'unknown exception sending email to %s' % email.to
-                if filter(lambda name, address: address.lower() == email.to.lower(), settings.ADMINS):
-                    logger.warn(msg, exc_info=True)
+                if list(filter(lambda name, address: address.lower() == email.to.lower(), settings.ADMINS)):
+                    logger.warning(msg, exc_info=True)
                 else:
                     logger.error(msg, exc_info=True)
             if email.sent:
