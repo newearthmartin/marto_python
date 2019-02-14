@@ -30,11 +30,15 @@ class Pagination:
         if count % num_per_page != 0:
             self.total_pages += 1
         self.many_pages = self.total_pages > 1
+
     def slice(self, the_list):
         return the_list[self.first:self.last]
+
     def url(self):
         return self.page_param + '=' + str(self.page)
+
     def url_next(self):
         return self.page_param + '=' + str(self.page + 1)
+
     def url_prev(self):
         return self.page_param + '=' + str(self.page - 1)

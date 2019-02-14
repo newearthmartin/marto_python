@@ -14,6 +14,7 @@ from marto_python.collections import list2comma_separated
 
 logger = logging.getLogger(__name__)
 
+
 class DecoratorBackend(BaseEmailBackend):
     """abstract class for decorators to add functionality to EmailBackend in a decorator pattern"""
     inner_backend = None
@@ -34,6 +35,7 @@ class DecoratorBackend(BaseEmailBackend):
     def send_messages(self, email_messages):
         if self.inner_backend:
             self.inner_backend.send_messages(email_messages)
+
     def open(self):
         if self.inner_backend:
             self.inner_backend.open()
@@ -41,6 +43,7 @@ class DecoratorBackend(BaseEmailBackend):
     def close(self):
         if self.inner_backend:
             self.inner_backend.close()
+
 
 class StackedEmailBackend(DecoratorBackend):
     def __init__(self, *args, **kwargs):
@@ -54,7 +57,9 @@ class DBEmailBackend(DecoratorBackend):
     def __init__(self, *args, **kwargs):
         super(DBEmailBackend, self).__init__(*args, **kwargs)
         if not self.inner_backend:
-            class_name = getattr(settings, 'EMAIL_DB_BACKEND_INNER_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+            class_name = getattr(settings,
+                                 'EMAIL_DB_BACKEND_INNER_BACKEND',
+                                 'django.core.mail.backends.smtp.EmailBackend')
             if class_name:
                 self.set_inner_backend_class(class_name)
 
@@ -65,14 +70,14 @@ class DBEmailBackend(DecoratorBackend):
         dump = json.dumps(message.__dict__)
         message.connection = connection
         email = EmailMessage()
-        email.from_email    = message.from_email
-        email.subject       = message.subject
-        email.body          = message.body
-        email.to            = list2comma_separated(message.to)
-        email.cc            = list2comma_separated(message.cc)
-        email.bcc           = list2comma_separated(message.bcc)
-        email.email_class   = get_full_class(message)
-        email.email_dump    = dump
+        email.from_email =  message.from_email
+        email.subject =     message.subject
+        email.body =        message.body
+        email.to =          list2comma_separated(message.to)
+        email.cc =          list2comma_separated(message.cc)
+        email.bcc =         list2comma_separated(message.bcc)
+        email.email_class = get_full_class(message)
+        email.email_dump =  dump
         return email
 
     @staticmethod
@@ -82,14 +87,14 @@ class DBEmailBackend(DecoratorBackend):
         return message
 
     def send_messages(self, email_messages):
-        emails = map(DBEmailBackend.django_message_to_db_email, email_messages)
-        for email in emails:
+        db_emails = map(DBEmailBackend.django_message_to_db_email, email_messages)
+        for email in db_emails:
             email.save()
         if getattr(settings, "EMAIL_DB_BACKEND_SEND_IMMEDIATELY", False):
             logger.info('sending emails now')
-            self.send_emails(emails)
+            self.send_emails(db_emails)
         else:
-            logger.info('stored %d emails for sending later' % len(emails))
+            logger.info('stored %d emails for sending later' % len(db_emails)) # PY3: fixme
 
     def send_all(self):
         self.send_queryset(EmailMessage.objects)
@@ -112,7 +117,8 @@ class DBEmailBackend(DecoratorBackend):
         emails_sent_today = EmailMessage.objects.filter(sent=True).filter(sent_on__gt=yesterday24hs)
         num_emails_sent_today = emails_sent_today.count()
         total_allowed_emails = max_today - num_emails_sent_today
-        logger.info('Sending emails - already sent %d emails - can send %d more' % (num_emails_sent_today, total_allowed_emails))
+        logger.info('Sending emails - already sent %d emails - can send %d more'
+                    % (num_emails_sent_today, total_allowed_emails))
         if total_allowed_emails < 0:
             logger.error('Sent %d emails but only %d were allowed!' % (num_emails_sent_today, max_today))
             return
@@ -130,7 +136,8 @@ class DBEmailBackend(DecoratorBackend):
                 continue
             count += 1
             subjects[subject] = count
-            logger.info('email with subject %s ok for sending - updated count %d - maximum %d' % (subject, count, max_by_subject))
+            logger.info('email with subject %s ok for sending - updated count %d - maximum %d'
+                        % (subject, count, max_by_subject))
             allowed_emails.append(email)
 
         if allowed_emails: self.do_send(allowed_emails)
@@ -138,7 +145,7 @@ class DBEmailBackend(DecoratorBackend):
     def do_send(self, emails):
         logger.info('sending %d emails' % len(emails))
         for email in emails:
-            #check again if its not sent, for concurrency
+            # check again if its not sent, for concurrency
             if email.sent:
                 logger.debug('email already sent %s - %s' % (email.to, email.subject))
                 continue
@@ -180,8 +187,8 @@ class FilteringEmailBackend(DecoratorBackend):
         class_name = getattr(settings, 'EMAIL_FILTERING_BACKEND_INNER_BACKEND')
         super(FilteringEmailBackend, self).__init__(*args, inner_backend_class=class_name, **kwargs)
         self.filter = setting('EMAIL_FILTERING_BACKEND_FILTER', default=True)
-        self.pass_emails     = setting('EMAIL_FILTERING_BACKEND_PASS_EMAILS'    , default=[])
-        self.redirect_to     = setting('EMAIL_FILTERING_BACKEND_REDIRECT_TO'    , default=[])
+        self.pass_emails = setting('EMAIL_FILTERING_BACKEND_PASS_EMAILS', default=[])
+        self.redirect_to = setting('EMAIL_FILTERING_BACKEND_REDIRECT_TO', default=[])
 
     def send_messages(self, email_messages):
         for message in email_messages:
@@ -191,7 +198,7 @@ class FilteringEmailBackend(DecoratorBackend):
                 for address in all_recipients:
                     if address not in self.pass_emails:
                         send = False
-            message_string = '%s (to:%s cc:%s bcc:%s)' %  (message.subject,
+            message_string = '%s (to:%s cc:%s bcc:%s)' % (message.subject,
                                                           list2comma_separated(message.to),
                                                           list2comma_separated(message.cc),
                                                           list2comma_separated(message.bcc))

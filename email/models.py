@@ -7,28 +7,33 @@ random.seed()
 
 
 class EmailMessage(models.Model):
-    from_email      = models.CharField(max_length=256, null=False, blank=False)
-    to              = models.TextField(null=True, blank=True)  # comma separated list of recipients
-    cc              = models.TextField(null=True, blank=True)  # comma separated list of recipients
-    bcc             = models.TextField(null=True, blank=True)  # comma separated list of recipients
-    subject         = models.CharField(max_length=256, null=True, blank=True)
-    body            = models.TextField(null=True, blank=True)
-    created_on      = models.DateTimeField(auto_now_add=True)
-    sent            = models.BooleanField(default=False, db_index=True)
-    sent_on         = models.DateTimeField(null=True, blank=True, db_index=True)
+    from_email = models.CharField(max_length=256, null=False, blank=False)
+    to = models.TextField(null=True, blank=True)  # comma separated list of recipients
+    cc = models.TextField(null=True, blank=True)  # comma separated list of recipients
+    bcc = models.TextField(null=True, blank=True)  # comma separated list of recipients
+    subject = models.CharField(max_length=256, null=True, blank=True)
+    body = models.TextField(null=True, blank=True)
+    created_on = models.DateTimeField(auto_now_add=True)
+    sent = models.BooleanField(default=False, db_index=True)
+    sent_on = models.DateTimeField(null=True, blank=True, db_index=True)
     send_successful = models.BooleanField(default=False)
-    fail_message    = models.CharField(max_length=256, null=True, blank=True)
-    email_class     = models.CharField(max_length=256)
-    email_dump      = models.TextField()
+    fail_message = models.CharField(max_length=256, null=True, blank=True)
+    email_class = models.CharField(max_length=256)
+    email_dump = models.TextField()
+
     def __unicode__(self):
         return self.subject
+
 
 class EmailConfirmationMixin(models.Model):
     """ For mixing into the UserProfile model """
     class Meta:
         abstract = True
-    email_confirmed = models.BooleanField(blank=False, null=False, default=False, verbose_name='email confirmed')
-    email_confirmation_key = models.CharField(max_length=40, blank=True, null=True, default=None, verbose_name='email confirmation key')
+
+    email_confirmed = models.BooleanField(blank=False, null=False, default=False,
+                                          verbose_name='email confirmed')
+    email_confirmation_key = models.CharField(max_length=40, blank=True, null=True, default=None,
+                                              verbose_name='email confirmation key')
 
     # users should override this method if user is different from "self.user"
     def get_user(self):
@@ -61,8 +66,8 @@ class EmailConfirmationMixin(models.Model):
             return True
         else:
             return False
-    #does not generate key
-    def send_email_confirmation(self, subject, template, context=None):
+
+    def send_email_confirmation(self, subject, template, context=None):  # does not generate key
         if context is None:
             context = {}
         user = self.get_user()

@@ -21,6 +21,7 @@ def urldecode(string):
     return ret
 
 
+
 def is_absolute(url):
     return bool(urlparse.urlparse(url).netloc)
 
