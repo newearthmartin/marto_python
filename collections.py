@@ -17,9 +17,7 @@ def to_dict(lst, map_func):
 
 
 def to_list(dct, sorting_key_fn=None):
-    lst = []
-    for k, v in dct.iteritems():
-        lst.append((k, v))
+    lst = list(dct.items())
     if sorting_key_fn:
         lst.sort(key=sorting_key_fn)
     return lst
@@ -56,7 +54,7 @@ def dict_encode(obj, encoder=None):
     if obj is None: return None
     if type(obj) == dict:
         rv = {}
-        for k, v in obj.iteritems():
+        for k, v in obj.items():
             rv[k] = dict_encode(v, encoder)
         return rv
     if hasattr(obj, '__iter__'):
@@ -69,7 +67,7 @@ def dict_encode(obj, encoder=None):
     if encoder:
         val = encoder(obj)
         if val is not None: return dict_encode(val, encoder)
-    raise(Exception('Could not encode %s to dictionary' % type(obj)))
+    raise Exception('Could not encode {} to dictionary'.format(type(obj)))
 
 
 def first(condition, iterable):
