@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 
 
+# noinspection PyPep8,PyUnresolvedReferences
 class Migration(migrations.Migration):
 
     dependencies = [
