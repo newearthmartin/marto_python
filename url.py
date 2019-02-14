@@ -1,28 +1,28 @@
 import logging
-import urllib
-import urlparse
+from urllib.parse import urlencode, unquote_plus, urlparse
 
 logger = logging.getLogger(__name__)
 
-
-def urlencode(string):
-    enc = urllib.urlencode({'': string})
+"""
+# FIXME: why these methods?
+def url_encode(string):
+    enc = urlencode({'': string})
     return enc.split('=', 1)[1]
 
 
-def urldecode(string):
+def url_decode(string):
     ret = {}
     for pair in string.split('&'):
         pair = pair.split('=', 1)
         if len(pair) == 2:
-            ret[urllib.unquote_plus(pair[0])] = urllib.unquote_plus(pair[1])
+            ret[unquote_plus(pair[0])] = unquote_plus(pair[1])
         else:
             logger.error('problem urldecoding ' + pair)
     return ret
-
+"""
 
 def is_absolute(url):
-    return bool(urlparse.urlparse(url).netloc)
+    return bool(urlparse(url).netloc)
 
 
 def get_param(request, param_name, empty_valid=False, default=None, encode_unicode=True):
@@ -32,7 +32,7 @@ def get_param(request, param_name, empty_valid=False, default=None, encode_unico
         if empty_valid or len(temp_val) > 0:
             val = temp_val
     if encode_unicode and val is not None:
-        val = unicode(val)
+        val = str(val)
     return val
 
 
@@ -43,6 +43,6 @@ def post_param(request, param_name, empty_valid=False, default=None, encode_unic
         if empty_valid or len(temp_val) > 0:
             val = temp_val
     if encode_unicode and val is not None:
-        val = unicode(val)
+        val = str(val)
     return val
 

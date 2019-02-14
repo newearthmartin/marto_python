@@ -26,7 +26,7 @@ class Pagination:
         else:
             self.next = None
             self.has_next = False
-        self.total_pages = count / num_per_page
+        self.total_pages = count // num_per_page
         if count % num_per_page != 0:
             self.total_pages += 1
         self.many_pages = self.total_pages > 1
