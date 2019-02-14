@@ -51,23 +51,27 @@ def dict_encode(obj, encoder=None):
     useful for serializing objects to JSON
     use: json.dumps(dict_encode(obj,encoder=some_encoder_func))
     """
-    if obj is None: return None
-    if type(obj) == dict:
+    if obj is None:
+        return None
+    elif isinstance(obj, str):
+        return obj
+    elif type(obj) == dict:
         rv = {}
         for k, v in obj.items():
             rv[k] = dict_encode(v, encoder)
         return rv
-    if hasattr(obj, '__iter__'):
+    elif hasattr(obj, '__iter__'):
         rv = []
         for elem in obj:
             rv.append(dict_encode(elem, encoder))
         return rv
-    if not hasattr(obj, '__dict__'):
+    elif not hasattr(obj, '__dict__'):
         return obj
-    if encoder:
-        val = encoder(obj)
-        if val is not None: return dict_encode(val, encoder)
-    raise Exception('Could not encode {} to dictionary'.format(type(obj)))
+    else:
+        # is object
+        if not encoder:
+            raise Exception('Can\'t encode object of type %s without an encoder' % type(obj))
+        return dict_encode(encoder(obj), encoder)
 
 
 def first(condition, iterable):
