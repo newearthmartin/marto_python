@@ -70,7 +70,7 @@ def get_pk(obj):
 
 
 def dist(lat0, lon0, lat1, lon1):
-    dist2 = math.pow(float(lat1) - float(lat0), 2) + math.pow(float(lon1) - float(lon0),2)
+    dist2 = math.pow(float(lat1) - float(lat0), 2) + math.pow(float(lon1) - float(lon0), 2)
     return math.sqrt(dist2)
 
 
