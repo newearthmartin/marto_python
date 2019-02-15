@@ -24,7 +24,7 @@ def upload_pic(uploaded_file, to_file):
     destination.close()
 
 
-def read_lines(f, remove_empty=True):
+def read_lines(f, remove_empty=False):
     lines = f.read().splitlines()
     lines = [line.strip() for line in lines]
     if remove_empty: lines = [s for s in lines if s]
