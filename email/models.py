@@ -7,11 +7,11 @@ random.seed()
 
 
 class EmailMessage(models.Model):
-    from_email = models.CharField(max_length=256, null=False, blank=False)
+    from_email = models.CharField(max_length=512, null=False, blank=False)
     to = models.TextField(null=True, blank=True)  # comma separated list of recipients
     cc = models.TextField(null=True, blank=True)  # comma separated list of recipients
     bcc = models.TextField(null=True, blank=True)  # comma separated list of recipients
-    subject = models.CharField(max_length=256, null=True, blank=True)
+    subject = models.CharField(max_length=512, null=True, blank=True)
     body = models.TextField(null=True, blank=True)
     created_on = models.DateTimeField(auto_now_add=True)
     sent = models.BooleanField(default=False, db_index=True)
@@ -32,7 +32,7 @@ class EmailConfirmationMixin(models.Model):
 
     email_confirmed = models.BooleanField(blank=False, null=False, default=False,
                                           verbose_name='email confirmed')
-    email_confirmation_key = models.CharField(max_length=40, blank=True, null=True, default=None,
+    email_confirmation_key = models.CharField(max_length=100, blank=True, null=True, default=None,
                                               verbose_name='email confirmation key')
 
     # users should override this method if user is different from "self.user"
