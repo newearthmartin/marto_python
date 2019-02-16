@@ -18,7 +18,7 @@ class OverwriteStorage(FileSystemStorage):
 
 
 def upload_pic(uploaded_file, to_file):
-    destination = open(os.path.join(settings.MEDIA_ROOT, to_file), 'wb+')
+    destination = open(os.path.join(settings.MEDIA_ROOT, to_file), 'wb')
     for chunk in uploaded_file.chunks():
         destination.write(chunk)
     destination.close()
