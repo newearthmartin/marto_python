@@ -11,7 +11,7 @@ class EmailMessage(models.Model):
     to = models.TextField(null=True, blank=True)  # comma separated list of recipients
     cc = models.TextField(null=True, blank=True)  # comma separated list of recipients
     bcc = models.TextField(null=True, blank=True)  # comma separated list of recipients
-    subject = models.CharField(max_length=512, null=True, blank=True)
+    subject = models.CharField(max_length=1024, null=True, blank=True)
     body = models.TextField(null=True, blank=True)
     created_on = models.DateTimeField(auto_now_add=True)
     sent = models.BooleanField(default=False, db_index=True)
