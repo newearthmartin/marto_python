@@ -1,6 +1,7 @@
 from django.core.validators import EmailValidator
 from django.template.loader import render_to_string
 from django.core.mail.message import EmailMessage
+from django.core.exceptions import ValidationError
 from django.contrib.sites.models import Site
 from django.conf import settings
 from marto_python.collections import is_list_or_tuple
@@ -12,7 +13,7 @@ def is_email(email_str):
     try:
         email_validator(email_str)
         return True
-    except:
+    except ValidationError:
         return False
 
 
