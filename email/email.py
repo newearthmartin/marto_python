@@ -19,11 +19,21 @@ def is_email(email_str):
         return False
 
 
+def send(to, subject, email_html, sender=settings.DEFAULT_FROM_EMAIL):
+    email = EmailMessage(subject, email_html, sender, to)
+    email.content_subtype = "html"  # Main content is now text/html
+    email.send(fail_silently=False)
+
+
 def send_email(to, subject, template_file, context_dict, sender=settings.DEFAULT_FROM_EMAIL):
     if not is_list_or_tuple(to):
         to = [to]
     context_dict['site'] = Site.objects.get_current()
     email_html = render_to_string(template_file, context_dict)
-    email = EmailMessage(subject, email_html, sender, to)
-    email.content_subtype = "html"  # Main content is now text/html
-    email.send(fail_silently=False)
+    send(to, subject, email_html, sender=sender)
+
+
+def send_email_to_admins(subject, email_html):
+    admin_emails = map(lambda e: e[1], settings.ADMINS)
+    send(admin_emails, subject, email_html)
+
