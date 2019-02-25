@@ -35,7 +35,7 @@ def trim_digits(num, digits):
     return trimmed
 
 
-def to_int(string):
+def as_int(string):
     if not string: return None
     try:
         return int(string)
