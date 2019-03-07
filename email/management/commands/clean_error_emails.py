@@ -11,6 +11,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         msgs = EmailMessage.objects.filter(subject__contains='[Django] ERROR (EXTERNAL IP):').all()
         logger.info('there are %d django error messages, cleaning...' % len(msgs))
-        #for msg in msgs:
-        #    msg.delete()
+        for msg in msgs:
+            msg.delete()
 
