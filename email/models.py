@@ -21,7 +21,7 @@ class EmailMessage(models.Model):
     email_class = models.CharField(max_length=256)
     email_dump = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.subject
 
 
