@@ -168,14 +168,9 @@ class DBEmailBackend(DecoratorBackend):
                 logger.warn('error sending email to %s' % email.to, exc_info=True)
             except:
                 msg = 'unknown exception sending email to %s' % email.to
-<<<<<<< Updated upstream
-                if filter(lambda name, address: address.lower() == email.to.lower(), settings.ADMINS):
-                    logger.warn(msg, exc_info=True)
-=======
                 has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
                 if has_admin_emails:
-                    logger.warning(msg, exc_info=True)
->>>>>>> Stashed changes
+                    logger.warn(msg, exc_info=True)
                 else:
                     logger.error(msg, exc_info=True)
             if email.sent:
