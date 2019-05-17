@@ -167,7 +167,8 @@ class DBEmailBackend(DecoratorBackend):
                 logger.warning('error sending email to %s' % email.to, exc_info=True)
             except:
                 msg = 'unknown exception sending email to %s' % email.to
-                if list(filter(lambda name, address: address.lower() == email.to.lower(), settings.ADMINS)):
+                has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
+                if has_admin_emails:
                     logger.warning(msg, exc_info=True)
                 else:
                     logger.error(msg, exc_info=True)
