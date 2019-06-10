@@ -157,16 +157,3 @@ def db_load():
     local('tar xvfz data/db.tgz')
     local('./manage.py loaddata data/db.json')
     local('rm data/db.json')
-
-
-################ LET'S ENCRYPT ################
-
-
-@task
-def letsencrypt():
-    """
-    generates & installs let's encrypt HTTPS certs
-    """
-    require('hosts', provided_by=[prod])
-    with prefix(env.venv_app):
-        run('cd ~/le_certs; letsencrypt_webfaction --config le_config_all.yml')
