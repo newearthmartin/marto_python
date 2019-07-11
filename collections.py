@@ -1,3 +1,5 @@
+import json
+
 def add_list_elem(d, key, elem):
     if key in d and d[key] is not None:
         d[key].append(elem)
@@ -78,3 +80,15 @@ def first(condition, iterable):
     for item in iterable:
         if condition(item): return item
     return None
+
+
+def filter_json_encodable(dct):
+    rv = {}
+    for k,v in dct.items():
+        try:
+            json.dumps(k)
+            json.dumps(v)
+            rv[k] = v
+        except:
+            pass
+    return rv
