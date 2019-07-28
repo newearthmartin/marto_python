@@ -74,3 +74,8 @@ def empty_then_none(string):
 
 def none_then_empty(string):
     return string if string else ''
+
+
+def remove_zw(strng):
+    return strng.replace('\u200B', '') \
+                .replace('\u200C', '')
