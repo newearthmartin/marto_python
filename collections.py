@@ -18,6 +18,12 @@ def to_dict(lst, map_func):
     return dct
 
 
+def map_dict(dct, map_fn):
+    rv = {}
+    for k,v in dct.items():
+        rv[k] = map_fn(k, v)
+    return rv
+
 def to_list(dct, sorting_key_fn=None):
     lst = list(dct.items())
     if sorting_key_fn:
