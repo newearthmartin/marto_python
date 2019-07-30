@@ -1,3 +1,5 @@
+import json
+
 def add_list_elem(d, key, elem):
     if key in d and d[key] is not None:
         d[key].append(elem)
@@ -76,3 +78,16 @@ def first(condition, iterable):
     for item in iterable:
         if condition(item): return item
     return None
+
+
+def load_json(str, default=None):
+    """
+    will load the json string if there is something in str
+    otherwise will return the default object if set, otherwise {}
+    """
+    if str:
+        return json.loads(str)
+    elif default is not None:
+        return default
+    else:
+        return {}
