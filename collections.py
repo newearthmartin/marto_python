@@ -98,3 +98,16 @@ def filter_json_encodable(dct):
         except:
             pass
     return rv
+
+
+def load_json(str, default=None):
+    """
+    will load the json string if there is something in str
+    otherwise will return the default object if set, otherwise {}
+    """
+    if str:
+        return json.loads(str)
+    elif default is not None:
+        return default
+    else:
+        return {}
