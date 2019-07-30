@@ -79,3 +79,11 @@ def none_then_empty(string):
 def remove_zw(strng):
     return strng.replace('\u200B', '') \
                 .replace('\u200C', '')
+
+
+def cut_str(strng, length):
+    l = len(strng)
+    if l <= length:
+        return strng
+    else:
+        return strng[:length-3] + '...'
