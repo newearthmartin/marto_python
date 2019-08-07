@@ -51,21 +51,6 @@ def push():
         run("git pull")
         run("git submodule update --init --recursive")
 
-def check_repo():
-    """
-    Checks local repository to ensure there are no uncommitted
-    changes or files that have not been added to the repository.
-    """
-    with settings(hide('warnings'), warn_only=True):
-        result = local('git diff-index --quiet HEAD', capture=True)  # Check for uncommitted changes
-    if result.return_code: # and not confirm('Repository has uncommitted changes.  Ignore?'):
-        abort('ABORTED: repo has uncommitted changes.')
-
-    with settings(hide('warnings'), warn_only=True):
-        result = local('git ls-files --others --exclude-standard --error-unmatch .', capture=True)
-    if len(result): # and not confirm('Untracked files: \n%s\nIgnore?' % result):
-        abort('ABORTED: There are untracked files in the git repo.')
-
 
 ################ DEPLOY ################
 
