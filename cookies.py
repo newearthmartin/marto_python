@@ -11,4 +11,4 @@ class FirstTimeCookieMiddleware(object):
         return response
 
 def get_CSRF_cookie(request):
-    return request.COOKIES[settings.CSRF_COOKIE_NAME]
+    return request.COOKIES.get(settings.CSRF_COOKIE_NAME, None)
