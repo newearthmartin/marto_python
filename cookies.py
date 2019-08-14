@@ -1,6 +1,5 @@
 from django.conf import settings
 
-
 # noinspection PyMethodMayBeStatic
 class FirstTimeCookieMiddleware(object):
 
@@ -10,3 +9,6 @@ class FirstTimeCookieMiddleware(object):
     def process_response(self, _, response):
         response.set_cookie(settings.SITE_COOKIE_NAME)
         return response
+
+def get_CSRF_cookie(request):
+    return request.COOKIES[settings.CSRF_COOKIE_NAME]
