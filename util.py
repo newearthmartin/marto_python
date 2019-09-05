@@ -41,6 +41,7 @@ def make_tz_aware(datetime, tz=None):
         tz = pytz_timezone(settings.TIME_ZONE)
     return tz.localize(datetime)
 
+
 def custom_range(l, range_first=None, range_last=None):
     if range_first is not None:
         range_first = int(range_first)
