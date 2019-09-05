@@ -3,7 +3,7 @@ import importlib
 import time
 import datetime
 
-from pytz import timezone as pytz_timezone
+from pytz import timezone as pytz_timezone, utc
 
 from django import forms
 from django.conf import settings
@@ -25,23 +25,19 @@ def add_message(request, message):
     add_list_elem(request.session, 'messages', message)
 
 
-def timestamp2datetime(ts):
-    ts = float(ts)
-    return datetime.datetime.fromtimestamp(ts)
+def as_datetime(ts):
+    return datetime.datetime.fromtimestamp(float(ts), tz=utc)
 
+def as_timestamp(dt):
+    return int(dt.timestamp())
 
-def datetime2timestamp(dt):
-    return int(time.mktime(dt.timetuple()))
-
-
-def make_tz_aware(dattetime, tz=None):
+def make_tz_aware(datetime, tz=None):
     """
     makes the datetime tz aware, if no tz is passed, uses the tz from settings
     """
     if not tz:
         tz = pytz_timezone(settings.TIME_ZONE)
-    return tz.localize(dattetime)
-
+    return tz.localize(datetime)
 
 def custom_range(l, range_first=None, range_last=None):
     if range_first is not None:
