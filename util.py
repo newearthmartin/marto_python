@@ -28,8 +28,10 @@ def add_message(request, message):
 def as_datetime(ts):
     return datetime.datetime.fromtimestamp(float(ts), tz=utc)
 
+
 def as_timestamp(dt):
     return long(dt.timestamp())
+
 
 def make_tz_aware(datetime, tz=None):
     """
