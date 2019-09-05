@@ -1,11 +1,9 @@
-# encoding: utf-8
-
 import math
 import importlib
 import time
 import datetime
 
-from pytz import timezone as pytz_timezone
+from pytz import timezone as pytz_timezone, utc
 
 from django import forms
 from django.conf import settings
@@ -27,23 +25,19 @@ def add_message(request, message):
     add_list_elem(request.session, 'messages', message)
 
 
-def timestamp2datetime(ts):
-    ts = float(ts)
-    return datetime.datetime.fromtimestamp(ts)
+def as_datetime(ts):
+    return datetime.datetime.fromtimestamp(float(ts), tz=utc)
 
+def as_timestamp(dt):
+    return long(dt.timestamp())
 
-def datetime2timestamp(dt):
-    return long(time.mktime(dt.timetuple()))
-
-
-def make_tz_aware(dattetime, tz=None):
+def make_tz_aware(datetime, tz=None):
     """
     makes the datetime tz aware, if no tz is passed, uses the tz from settings
     """
     if not tz:
         tz = pytz_timezone(settings.TIME_ZONE)
-    return tz.localize(dattetime)
-
+    return tz.localize(datetime)
 
 def custom_range(l, range_first=None, range_last=None):
     if range_first is not None:
@@ -63,7 +57,7 @@ def custom_range(l, range_first=None, range_last=None):
 
 def daterange(start_date, end_date):
     delta = int((end_date - start_date).days)
-    for n in xrange(0, delta):
+    for n in range(0, delta):
         yield start_date + datetime.timedelta(n)
 
 
@@ -121,7 +115,7 @@ def setting(property_name, default=None):
     try:
         val = getattr(settings, property_name)
     except:
-        print 'WARNING:', property_name, ' not found in settings module'
+        print('WARNING:', property_name, ' not found in settings module')
         val = default
     return val
 
@@ -144,7 +138,7 @@ def change(obj, properties_new_vals):
     Returns true if the value actually changed
     """
     changed = False
-    for prop, new_val in properties_new_vals.iteritems():
+    for prop, new_val in properties_new_vals.items():
         old_val = getattr(obj, prop)
         if old_val != new_val:
             setattr(obj, prop, new_val)
