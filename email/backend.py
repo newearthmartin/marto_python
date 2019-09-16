@@ -175,7 +175,7 @@ class DBEmailBackend(DecoratorBackend):
             if email.sent:
                 email.sent_on = timezone.now()
                 email.save()
-        logger.info('sending %d emails finished' % len(emails))
+        logger.info('sending %d emails - finished' % len(emails))
 
 
 class FilteringEmailBackend(DecoratorBackend):
