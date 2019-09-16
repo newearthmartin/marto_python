@@ -91,7 +91,7 @@ class DBEmailBackend(DecoratorBackend):
         for email in db_emails:
             email.save()
         if getattr(settings, "EMAIL_DB_BACKEND_SEND_IMMEDIATELY", False):
-            logger.info('sending emails now')
+            logger.debug('sending emails now')
             self.send_emails(db_emails)
         else:
             logger.info('stored %d emails for sending later' % len(db_emails)) # PY3: fixme
@@ -117,7 +117,7 @@ class DBEmailBackend(DecoratorBackend):
         emails_sent_today = EmailMessage.objects.filter(sent=True).filter(sent_on__gt=yesterday24hs)
         num_emails_sent_today = emails_sent_today.count()
         total_allowed_emails = max_today - num_emails_sent_today
-        logger.info('Sending emails - already sent %d emails - can send %d more'
+        logger.debug('Sending emails - already sent %d emails - can send %d more'
                     % (num_emails_sent_today, total_allowed_emails))
         if total_allowed_emails < 0:
             logger.error('Sent %d emails but only %d were allowed!' % (num_emails_sent_today, max_today))
@@ -127,7 +127,7 @@ class DBEmailBackend(DecoratorBackend):
         subjects = {}
         for email in emails:
             if len(allowed_emails) >= total_allowed_emails:
-                logger.info('reached maximum total emails')
+                logger.warning('reached maximum total emails')
                 break
             subject = email.subject
             count = subjects[subject] if subject in subjects else emails_sent_today.filter(subject=subject).count()
@@ -136,8 +136,8 @@ class DBEmailBackend(DecoratorBackend):
                 continue
             count += 1
             subjects[subject] = count
-            logger.info('email with subject %s ok for sending - updated count %d - maximum %d'
-                        % (subject, count, max_by_subject))
+            logger.info('sending email - subject: %s' % subject)
+            logger.debug('sending email - ok for sending - updated count %d - maximum %d' % (count, max_by_subject))
             allowed_emails.append(email)
 
         if allowed_emails: self.do_send(allowed_emails)
@@ -176,7 +176,7 @@ class DBEmailBackend(DecoratorBackend):
             if email.sent:
                 email.sent_on = timezone.now()
                 email.save()
-        logger.info('sending %d emails - finished' % len(emails))
+        logger.debug('sending %d emails - finished' % len(emails))
 
 
 class FilteringEmailBackend(DecoratorBackend):
