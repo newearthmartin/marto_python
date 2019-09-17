@@ -27,7 +27,7 @@ class EmailMessageAdmin(ModelAdmin):
 
     def send(self, _, queryset):
         for email in queryset.all():
-            if email.sent and not email.send_succesful:
+            if email.sent and not email.send_successful:
                 email.sent = False
                 email.save()
         DBEmailBackend().send_queryset(queryset)
