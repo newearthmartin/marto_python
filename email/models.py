@@ -24,6 +24,13 @@ class EmailMessage(models.Model):
     def __unicode__(self):
         return self.subject
 
+    def clear_sent(self):
+        self.sent = False
+        self.send_successful = False
+        self.fail_message = None
+        self.sent_on = None
+        self.save()
+
 
 class EmailConfirmationMixin(models.Model):
     """ For mixing into the UserProfile model """
