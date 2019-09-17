@@ -25,7 +25,12 @@ class EmailMessageAdmin(ModelAdmin):
     search_fields = ['from_email', 'to', 'cc', 'bcc', 'subject', 'body', 'fail_message']
     actions = ['send']
 
-    def send(self, _, queryset): DBEmailBackend().send_queryset(queryset)
+    def send(self, _, queryset):
+        for email in queryset.all():
+            if email.sent and not email.send_succesful:
+                email.sent = False
+                email.save()
+        DBEmailBackend().send_queryset(queryset)
     send.short_description = "send emails"
 
 
