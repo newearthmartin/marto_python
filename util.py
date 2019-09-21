@@ -4,11 +4,14 @@ import time
 import datetime
 
 from pytz import timezone as pytz_timezone, utc
+from types import BuiltinFunctionType, BuiltinMethodType,  FunctionType, MethodType, LambdaType
+from functools import partial
 
 from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
+
 
 from .collections import add_list_elem
 
@@ -91,6 +94,10 @@ def is_valid_email(email):
         return True
     except forms.ValidationError:
         return False
+
+
+def is_function(obj):
+    return isinstance(obj, (BuiltinFunctionType, BuiltinMethodType,  FunctionType, MethodType, LambdaType, partial))
 
 
 def get_full_class(obj):
