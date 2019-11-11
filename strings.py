@@ -87,3 +87,7 @@ def cut_str(strng, length):
         return strng
     else:
         return strng[:length-3] + '...'
+
+
+def str_if(val, default_value=None):
+    return str(val) if val else default_value
