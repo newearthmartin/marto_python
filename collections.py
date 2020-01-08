@@ -1,5 +1,6 @@
 import json
 
+
 def add_list_elem(d, key, elem):
     if key in d and d[key] is not None:
         d[key].append(elem)
@@ -23,6 +24,7 @@ def map_dict(dct, map_fn):
     for k,v in dct.items():
         rv[k] = map_fn(k, v)
     return rv
+
 
 def to_list(dct, sorting_key_fn=None):
     lst = list(dct.items())
@@ -111,3 +113,8 @@ def load_json(str, default=None):
         return default
     else:
         return {}
+
+
+def contains_non_empty(lst):
+    filtered = list(filter(lambda e: e, lst))
+    return len(filtered) > 0
