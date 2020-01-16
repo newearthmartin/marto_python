@@ -33,6 +33,10 @@ def to_list(dct, sorting_key_fn=None):
     return lst
 
 
+def filter_map(old_map, keys):
+    return {k: old_map[k] for k in old_map if k in keys}
+
+
 def get_or_add_new(dct, key, new_elem_func):
     if key not in dct:
         dct[key] = new_elem_func()
