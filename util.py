@@ -29,6 +29,7 @@ def add_message(request, message):
 
 
 def as_datetime(ts):
+    if ts < 0: return None
     return datetime.datetime.fromtimestamp(float(ts), tz=utc)
 
 
