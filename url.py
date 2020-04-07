@@ -2,6 +2,10 @@ import logging
 import urllib
 import urlparse
 
+from django.conf import settings
+from django.contrib.sites.models import Site
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -47,3 +51,7 @@ def post_param(request, param_name, empty_valid=False, default=None, encode_unic
         val = unicode(val)
     return val
 
+
+def get_server_url():
+    protocol = 'https' if settings.DOMAIN_USE_HTTPS else 'http'
+    return protocol + '://' + Site.objects.get_current().domain
