@@ -155,3 +155,9 @@ def change(obj, properties_new_vals):
             setattr(obj, prop, new_val)
             changed = True
     return changed
+
+
+def compose(f, g):
+    def fog(*args, **kwargs):
+        return f(g(*args, **kwargs))
+    return fog
