@@ -84,7 +84,7 @@ def dict_encode(obj, encoder=None):
     else:
         # is object
         if not encoder:
-            raise Exception('Can\'t encode object of type %s without an encoder' % type(obj))
+            raise Exception(f"Can't encode object of type {type(obj)} without an encoder")
         return dict_encode(encoder(obj), encoder)
 
 
