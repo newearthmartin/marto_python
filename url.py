@@ -53,5 +53,6 @@ def post_param(request, param_name, empty_valid=False, default=None, encode_unic
 
 
 def get_server_url():
-    protocol = 'https' if settings.DOMAIN_USE_HTTPS else 'http'
+    use_http = hasattr(settings, 'SERVER_NOT_HTTPS') and settings.SERVER_NOT_HTTPS
+    protocol = 'http' if use_http else 'https'
     return protocol + '://' + Site.objects.get_current().domain
