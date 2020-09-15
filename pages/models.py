@@ -1,4 +1,3 @@
-# coding: utf-8
 # FIXME: move to club
 
 from django import forms
