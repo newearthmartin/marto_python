@@ -1,5 +1,6 @@
 import json
 
+
 def add_list_elem(d, key, elem):
     if key in d and d[key] is not None:
         d[key].append(elem)
