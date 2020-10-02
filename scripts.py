@@ -22,10 +22,10 @@ def django_command_line(default_module=None):
     module = options.settings
     if not options.settings:
         if default_module:
-            print 'Using already defined DJANGO_SETTINGS_MODULE'
+            print('Using already defined DJANGO_SETTINGS_MODULE')
             module = default_module
         else:
             parser.error("You must specify a settings module")
     
     os.environ['DJANGO_SETTINGS_MODULE'] = module
-    print 'using settings:', module
+    print('using settings:', module)

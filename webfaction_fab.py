@@ -11,7 +11,7 @@ def get_app_ssh_path():
 
 @task
 def prod():
-    print 'PRODUCTION environment'
+    print('PRODUCTION environment')
     env.hosts = [fab_settings['PROD_SERVER']]
     env.remote_app_dir = os.path.join(fab_settings['APP_DIR'], fab_settings['APP_NAME'])
     env.remote_apache_dir = os.path.join(fab_settings['APP_DIR'], 'apache2')
@@ -19,7 +19,7 @@ def prod():
 
 @task
 def test():
-    print 'TEST environment'
+    print('TEST environment')
     env.hosts = [fab_settings['PROD_SERVER']]
     env.remote_app_dir = os.path.join(fab_settings['APP_DIR_TEST'], fab_settings['APP_NAME'])
     env.remote_apache_dir = os.path.join(fab_settings['APP_DIR_TEST'], 'apache2')
@@ -33,7 +33,7 @@ def test():
 def commit():
     message = raw_input("Enter a git commit message:  ")
     local("git add -A && git commit -m \"%s\"" % message)
-    print "Changes have been pushed to remote repository..."
+    print("Changes have been pushed to remote repository...")
 
 @task
 def push():
