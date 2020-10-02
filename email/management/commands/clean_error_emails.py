@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         msgs = EmailMessage.objects.filter(subject__contains='[Django] ERROR:').all()
-        logger.info('there are %d django error messages, cleaning...' % len(msgs))
+        logger.info(f'there are {len(msgs)} django error messages, cleaning...')
         for msg in msgs:
             msg.delete()
 

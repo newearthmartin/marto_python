@@ -35,7 +35,7 @@ def as_datetime(ts):
 
 
 def as_timestamp(dt):
-    return long(dt.timestamp())
+    return int(dt.timestamp())
 
 
 def make_tz_aware(datetime, tz=None):

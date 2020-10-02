@@ -11,7 +11,7 @@ class EmailMessage(models.Model):
     to = models.TextField(null=True, blank=True)  # comma separated list of recipients
     cc = models.TextField(null=True, blank=True)  # comma separated list of recipients
     bcc = models.TextField(null=True, blank=True)  # comma separated list of recipients
-    subject = models.CharField(max_length=512, null=True, blank=True)
+    subject = models.CharField(max_length=1024, null=True, blank=True)
     body = models.TextField(null=True, blank=True)
     created_on = models.DateTimeField(auto_now_add=True)
     sent = models.BooleanField(default=False, db_index=True)
@@ -21,7 +21,7 @@ class EmailMessage(models.Model):
     email_class = models.CharField(max_length=256)
     email_dump = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.subject
 
     def clear_sent(self):
