@@ -37,10 +37,8 @@ class EmailConfirmationMixin(models.Model):
     class Meta:
         abstract = True
 
-    email_confirmed = models.BooleanField(blank=False, null=False, default=False,
-                                          verbose_name='email confirmed')
-    email_confirmation_key = models.CharField(max_length=100, blank=True, null=True, default=None,
-                                              verbose_name='email confirmation key')
+    email_confirmed = models.BooleanField(blank=False, null=False, default=False, verbose_name='email confirmed')
+    email_confirmation_key = models.CharField(max_length=100, blank=True, null=True, default=None, verbose_name='email confirmation key')
 
     # users should override this method if user is different from "self.user"
     def get_user(self):
