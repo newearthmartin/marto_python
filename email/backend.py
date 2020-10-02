@@ -1,28 +1,32 @@
 # encoding: utf-8
+import email
+import logging
+logger = logging.getLogger(__name__)
 
 from django.core.mail.backends.base import BaseEmailBackend
-import email
+
 from marto_python.email.models import EmailMessage
 from marto_python.util import list2comma_separated, load_class, setting
 
 class DecoratorBackend(BaseEmailBackend):
     '''abstract class for decorators to add functionality to EmailBackend in a decorator pattern'''      
     inner_backend = None
+
     def __init__(self, inner_backend_settings_property):
         class_name = setting(inner_backend_settings_property)
         if class_name:
-            self.setInnerBackend( load_class(class_name)() )
-            
+            self.setInnerBackend(load_class(class_name)())
+
     def setInnerBackend(self, backend):
         self.inner_backend = backend
 
     def send_messages(self, email_messages):
         if self.inner_backend:
-            self.inner_backend.send_messages(email_messages)    
+            self.inner_backend.send_messages(email_messages)
     def open(self):
         if self.inner_backend:
             self.inner_backend.open()
-    
+
     def close(self):
         if self.inner_backend:
             self.inner_backend.close()
@@ -48,13 +52,13 @@ class FilteringEmailBackend(DecoratorBackend):
     filter = True
     pass_emails = []
     redirect_to = []
-    
+
     def __init__(self, *args, **kwargs):
         super(FilteringEmailBackend, self).__init__('EMAIL_FILTERING_BACKEND_INNER_BACKEND')
         self.filter = setting('EMAIL_FILTERING_BACKEND_FILTER', default=True)
         self.pass_emails     = setting('EMAIL_FILTERING_BACKEND_PASS_EMAILS'    , default=[])
         self.redirect_to     = setting('EMAIL_FILTERING_BACKEND_REDIRECT_TO'    , default=[])
-        
+
     def send_messages(self, email_messages):
         for message in email_messages:
             send = True
@@ -64,12 +68,10 @@ class FilteringEmailBackend(DecoratorBackend):
                     if address not in self.pass_emails:
                         send = False
             status = ''
-            message_string = '%s (to:%s cc:%s bcc:%s)' %  (
-                                                          message.subject,
-                                                          list2comma_separated(message.to), 
-                                                          list2comma_separated(message.cc), 
-                                                          list2comma_separated(message.bcc), 
-                                                          )
+            message_string = '%s (to:%s cc:%s bcc:%s)' %  (message.subject,
+                                                          list2comma_separated(message.to),
+                                                          list2comma_separated(message.cc),
+                                                          list2comma_separated(message.bcc))
             if send:
                 status = 'SENDING E-MAIL - ' + message_string
             else:
@@ -83,6 +85,6 @@ class FilteringEmailBackend(DecoratorBackend):
                     status += ' - redirecting to %s' % list2comma_separated(self.redirect_to)
                 else:
                     status += ' - not redirecting'
-            print status
+            logger.info(status)
             if send:
                 super(FilteringEmailBackend, self).send_messages(email_messages)
