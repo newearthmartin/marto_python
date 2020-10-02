@@ -1,4 +1,3 @@
-# encoding: utf-8
 import json
 import datetime
 import smtplib
@@ -87,14 +86,14 @@ class DBEmailBackend(DecoratorBackend):
         return message
 
     def send_messages(self, email_messages):
-        db_emails = map(DBEmailBackend.django_message_to_db_email, email_messages)
+        db_emails = list(map(DBEmailBackend.django_message_to_db_email, email_messages))
         for email in db_emails:
             email.save()
         if getattr(settings, "EMAIL_DB_BACKEND_SEND_IMMEDIATELY", False):
             logger.debug('sending emails now')
             self.send_emails(db_emails)
         else:
-            logger.info('stored %d emails for sending later' % len(db_emails)) # PY3: fixme
+            logger.info(f'stored {len(db_emails)} emails for sending later')
 
     def send_all(self):
         self.send_queryset(EmailMessage.objects)
@@ -116,10 +115,11 @@ class DBEmailBackend(DecoratorBackend):
         emails_sent_today = EmailMessage.objects.filter(sent=True).filter(sent_on__gt=yesterday24hs)
         num_emails_sent_today = emails_sent_today.count()
         total_allowed_emails = max_today - num_emails_sent_today
-        logger.debug('Sending emails - already sent %d emails - can send %d more'
-                    % (num_emails_sent_today, total_allowed_emails))
+        logger.debug(f'Sending emails'
+                     f' - already sent {num_emails_sent_today} emails'
+                     f' - can send {total_allowed_emails} more')
         if total_allowed_emails < 0:
-            logger.error('Sent %d emails but only %d were allowed!' % (num_emails_sent_today, max_today))
+            logger.error(f'Sent {num_emails_sent_today} emails but only {max_today} were allowed!')
             return
 
         allowed_emails = []
@@ -130,23 +130,23 @@ class DBEmailBackend(DecoratorBackend):
                 break
             subject = email.subject
             count = subjects[subject] if subject in subjects else emails_sent_today.filter(subject=subject).count()
-            logger.debug('Already sent %d (maximum %d) for subject \'%s\'' % (count, max_by_subject, subject))
+            logger.debug(f'Already sent {count} (maximum {max_by_subject}) for subject "{subject}"')
             if count >= max_by_subject:
                 continue
             count += 1
             subjects[subject] = count
-            logger.info('sending email - subject: %s' % subject)
-            logger.debug('sending email - ok for sending - updated count %d - maximum %d' % (count, max_by_subject))
+            logger.info(f'sending email - subject: {subject}')
+            logger.debug(f'sending email - ok for sending - updated count {count} - maximum {max_by_subject}')
             allowed_emails.append(email)
 
         if allowed_emails: self.do_send(allowed_emails)
 
     def do_send(self, emails):
-        logger.info('sending %d emails' % len(emails))
+        logger.info(f'sending {len(emails)} emails')
         for email in emails:
             # check again if its not sent, for concurrency
             if email.sent:
-                logger.debug('email already sent %s - %s' % (email.to, email.subject))
+                logger.debug(f'email already sent {email.to} - {email.subject}')
                 continue
             email_message = DBEmailBackend.db_email_to_django_message(email)
             email.sent = False
@@ -156,26 +156,26 @@ class DBEmailBackend(DecoratorBackend):
                 email.send_successful = True
                 email.sent = True
             except (smtplib.SMTPDataError, smtplib.SMTPRecipientsRefused) as e:
-                email.fail_message = unicode(e)
-                logger.warn('error sending email to %s' % email.to, exc_info=True)
+                email.fail_message = str(e)
+                logger.warning(f'error sending email to {email.to}', exc_info=True)
                 email.sent = True
             except TypeError as e:
-                email.fail_message = unicode(e)
-                logger.warn('error sending email to %s' % email.to, exc_info=True)
+                email.fail_message = str(e)
+                logger.warning(f'error sending email to {email.to}', exc_info=True)
                 email.sent = True
             except smtplib.SMTPConnectError:
-                logger.warn('error sending email to %s' % email.to, exc_info=True)
+                logger.warning(f'error sending email to {email.to}', exc_info=True)
             except:
-                msg = 'unknown exception sending email to %s' % email.to
+                msg = f'unknown exception sending email to {email.to}'
                 has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
                 if has_admin_emails:
-                    logger.warn(msg, exc_info=True)
+                    logger.warning(msg, exc_info=True)
                 else:
                     logger.error(msg, exc_info=True)
             if email.sent:
                 email.sent_on = timezone.now()
                 email.save()
-        logger.debug('sending %d emails - finished' % len(emails))
+        logger.debug(f'sending {len(emails)} emails - finished')
 
 
 class FilteringEmailBackend(DecoratorBackend):
@@ -198,10 +198,11 @@ class FilteringEmailBackend(DecoratorBackend):
                 for address in all_recipients:
                     if address not in self.pass_emails:
                         send = False
-            message_string = '%s (to:%s cc:%s bcc:%s)' % (message.subject,
-                                                          list2comma_separated(message.to),
-                                                          list2comma_separated(message.cc),
-                                                          list2comma_separated(message.bcc))
+            message_string = f'{message.subject} (' \
+                             f' to:{list2comma_separated(message.to)}' \
+                             f' cc:{list2comma_separated(message.cc)}' \
+                             f' bcc:{list2comma_separated(message.bcc)}' \
+                             f')'
             if send:
                 status = 'SENDING E-MAIL - ' + message_string
             else:
@@ -212,7 +213,7 @@ class FilteringEmailBackend(DecoratorBackend):
                     message.cc = []
                     message.bcc = []
                     send = True
-                    status += ' - redirecting to %s' % list2comma_separated(self.redirect_to)
+                    status += f' - redirecting to {list2comma_separated(self.redirect_to)}'
                 else:
                     status += ' - not redirecting'
             logger.info(status)

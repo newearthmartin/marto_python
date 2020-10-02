@@ -4,7 +4,7 @@ from fabfile_settings import fab_settings
 
 
 def get_app_ssh_path():
-    return '%s:%s/%s' % (fab_settings['PROD_SERVER'], fab_settings['APP_DIR'], fab_settings['APP_NAME'])
+    return f"{fab_settings['PROD_SERVER']}:{fab_settings['APP_DIR']}/{fab_settings['APP_NAME']}"
 
 
 ################ ENVIRONMENT ################
@@ -33,9 +33,9 @@ def test():
 
 @task
 def commit():
-    message = raw_input("Enter a git commit message:  ")
-    local("git add -A && git commit -m \"%s\"" % message)
-    print("Changes have been pushed to remote repository...")
+    message = input('Enter a git commit message: ')
+    local(f'git add -A && git commit -m "{message}"')
+    print('Changes have been pushed to remote repository...')
 
 
 @task
@@ -45,7 +45,7 @@ def push():
     """
     require('hosts', provided_by=[prod])
     require('venv_app', provided_by=[prod])
-    local("git submodule foreach git push")
+    # local("git submodule foreach git push")
     local("git push origin master")
     with prefix(env.venv_app):
         run("git pull")
@@ -87,7 +87,7 @@ def migrate():
     with prefix(env.venv_app):
         migrate_apps = fab_settings['MIGRATE_APPS']
         if not migrate_apps: migrate_apps = ''
-        run("python manage.py migrate %s" % migrate_apps)
+        run(f'python manage.py migrate {migrate_apps}')
 
 
 @task
@@ -97,7 +97,7 @@ def restart():
     """
     require('hosts', provided_by=[prod])
     require('remote_apache_dir', provided_by=[prod])
-    run("%s/bin/restart;" % env.remote_apache_dir)
+    run(f'{env.remote_apache_dir}/bin/restart;')
 
 
 @task
@@ -130,7 +130,7 @@ def media_sync():
     """
     Download production media files to local computer
     """
-    local('rsync -avz %s/media/ media/' % get_app_ssh_path())
+    local(f'rsync -avz {get_app_ssh_path()}/media/ media/')
 
 
 @task
@@ -141,12 +141,12 @@ def db_dump():
     require('hosts', provided_by=[prod])
     require('venv_app', provided_by=[prod])
     with prefix(env.venv_app):
-        run("mkdir -p data")
-        run("./manage.py dumpdata %s --indent=4 > data/db.json" % fab_settings['DUMP_DATA_MODELS'])
-        run("tar cvfz data/db.tgz data/db.json")
-        run("rm data/db.json")
-    local("mkdir -p data")
-    local('scp %s/data/db.tgz data' % get_app_ssh_path())
+        run('mkdir -p data')
+        run(f'./manage.py dumpdata {fab_settings["DUMP_DATA_MODELS"]} --indent=4 > data/db.json')
+        run('tar cvfz data/db.tgz data/db.json')
+        run('rm data/db.json')
+    local('mkdir -p data')
+    local(f'scp {get_app_ssh_path()}/data/db.tgz data')
 
 
 @task

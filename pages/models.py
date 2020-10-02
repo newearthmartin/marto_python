@@ -16,7 +16,7 @@ class Pagina(models.Model):
     contenido = models.TextField()
     extra_css = models.CharField(max_length=255, blank=True, null=True)
 
-    def __unicode__(self): return self.url
+    def __str__(self): return self.url
 
     def get_menu(self):
         try:
@@ -43,9 +43,9 @@ class Menu(models.Model):
     url =       models.CharField(max_length=255, null=True, blank=True)
     total_url = models.CharField(max_length=255, null=True, blank=True)
 
-    def __unicode__(self):
-        unicode_padre = (unicode(self.padre) + '->') if self.padre else ''
-        return unicode_padre + self.titulo
+    def __str__(self):
+        str_padre = (str(self.padre) + '->') if self.padre else ''
+        return str_padre + self.titulo
 
     def get_url(self):
         if self.pagina:
@@ -62,7 +62,7 @@ class Menu(models.Model):
         return self.children.order_by('indice')
 
     class Admin(admin.ModelAdmin):
-        list_display = ['__unicode__', 'seccion', 'total_index', 'pagina', 'total_url']
+        list_display = ['__str__', 'seccion', 'total_index', 'pagina', 'total_url']
         exclude = ['total_url']
 
     @staticmethod
@@ -83,7 +83,7 @@ class MenuInline(admin.TabularInline):
 
 class PaginaAdmin(admin.ModelAdmin):
     form = Pagina.AdminForm
-    list_display = ['__unicode__', 'url', 'menu_index']
+    list_display = ['__str__', 'url', 'menu_index']
     inlines = [MenuInline]
 
     @staticmethod

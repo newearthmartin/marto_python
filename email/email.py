@@ -1,5 +1,3 @@
-# encoding: utf-8
-
 from django.core.validators import EmailValidator
 from django.template.loader import render_to_string
 from django.core.mail.message import EmailMessage
