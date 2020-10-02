@@ -1,4 +1,3 @@
-import os
 import math
 import pdfkit
 import datetime
@@ -39,13 +38,29 @@ def as_timestamp(dt):
     return long(dt.timestamp())
 
 
-def make_tz_aware(dttime, tz=None):
+def make_tz_aware(datetime, tz=None):
     """
     makes the datetime tz aware, if no tz is passed, uses the tz from settings
     """
     if not tz:
         tz = pytz_timezone(settings.TIME_ZONE)
-    return tz.localize(dttime)
+    return tz.localize(datetime)
+
+
+def custom_range(l, range_first=None, range_last=None):
+    if range_first is not None:
+        range_first = int(range_first)
+    if range_last is not None:
+        range_last = int(range_last)
+    if range_first is not None:
+        if range_last is not None:
+            return l[range_first:range_last]
+        else:
+            return l[range_first:]
+    elif range_last is not None:
+        return l[:range_last]
+    else:
+        return l
 
 
 def daterange(start_date, end_date):
@@ -56,13 +71,6 @@ def daterange(start_date, end_date):
 
 def get_pk(obj):
     return obj.pk if obj else None
-
-
-def upload_pic(uploaded_file, to_file):
-    destination = open(os.path.join(settings.MEDIA_ROOT, to_file), 'wb+')
-    for chunk in uploaded_file.chunks():
-        destination.write(chunk)
-    destination.close()
 
 
 def dist(lat0, lon0, lat1, lon1):
