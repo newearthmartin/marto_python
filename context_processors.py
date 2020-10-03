@@ -9,10 +9,7 @@ logger = logging.getLogger(__name__)
 
 def site_view_only(func):
     def inner(request):
-        if not is_site_view(request.path):
-            return {}
-        else:
-            return func(request)
+        return func(request) if is_site_view(request.path) else {}
     return inner
 
 
