@@ -37,9 +37,9 @@ class Menu(models.Model):
         verbose_name_plural = 'menús'
     titulo =    models.CharField(max_length=255)
     seccion =   models.CharField(max_length=10, choices=settings.MENU_SECTIONS)
-    padre =     models.ForeignKey('Menu', null=True, blank=True, related_name='children')
+    padre =     models.ForeignKey('Menu', null=True, blank=True, related_name='children', on_delete=models.SET_NULL)
     indice =    models.IntegerField(default=0)
-    pagina =    models.ForeignKey('Pagina', null=True, blank=True)
+    pagina =    models.ForeignKey('Pagina', null=True, blank=True, on_delete=models.SET_NULL)
     url =       models.CharField(max_length=255, null=True, blank=True)
     total_url = models.CharField(max_length=255, null=True, blank=True)
 
