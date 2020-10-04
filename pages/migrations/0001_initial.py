@@ -1,8 +1,8 @@
-from django.db import migrations, models
+from __future__ import unicode_literals
 
 from django.db import models, migrations
 
-# noinspection PyPep8,PyUnresolvedReferences
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -18,12 +18,13 @@ class Migration(migrations.Migration):
                 ('indice', models.IntegerField(default=0)),
                 ('url', models.CharField(max_length=255, null=True, blank=True)),
                 ('total_url', models.CharField(max_length=255, null=True, blank=True)),
-                ('padre', models.ForeignKey(related_name='children', blank=True, to='pages.Menu', null=True, on_delete=models.SET_NULL)),
+                ('padre', models.ForeignKey(related_name='children', blank=True, to='pages.Menu', null=True)),
             ],
             options={
                 'verbose_name': 'men\xfa',
                 'verbose_name_plural': 'men\xfas',
             },
+            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Pagina',
@@ -37,10 +38,12 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'p\xe1gina',
             },
+            bases=(models.Model,),
         ),
         migrations.AddField(
             model_name='menu',
             name='pagina',
-            field=models.ForeignKey(blank=True, to='pages.Pagina', null=True, on_delete=models.SET_NULL),
+            field=models.ForeignKey(blank=True, to='pages.Pagina', null=True),
+            preserve_default=True,
         ),
     ]

@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
             name='EmailMessage',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('from_email', models.EmailField(max_length=75)),
+                ('from_email', models.EmailField(max_length=254)),
                 ('to', models.TextField(null=True, blank=True)),
                 ('cc', models.TextField(null=True, blank=True)),
                 ('bcc', models.TextField(null=True, blank=True)),
@@ -22,8 +22,5 @@ class Migration(migrations.Migration):
                 ('body', models.TextField(null=True, blank=True)),
                 ('timestamp', models.DateTimeField(auto_now_add=True)),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
     ]
