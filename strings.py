@@ -13,16 +13,23 @@ def encrypt_and_encode(string):
     """
     encrypts and encodes into base16
     the string must not contain trailing spaces (cause we need to add trailing spaces to have len % 8 = 0)
+    returns a string.
     """
-    while len(string) % 8 != 0:
-        string += ' '
-    encrypted = cipher.encrypt(string)
-    return base64.b16encode(encrypted)
+    string_bytes = string.encode('utf-8')
+    excess = len(string_bytes) % 8
+    if excess != 0:
+        padding = ' ' * (8 - excess)
+        string_bytes += padding.encode('utf-8')
+    encrypted = cipher.encrypt(string_bytes)
+    return base64.b16encode(encrypted).decode('ascii')
 
 
 def decode_and_decrypt(string):
+    """
+    we are assuming that the original data was utf-8
+    """
     encrypted = base64.b16decode(string)
-    return cipher.decrypt(encrypted).strip()
+    return cipher.decrypt(encrypted).decode('utf-8').strip()
 
 
 def replace_non_ascii(string, with_char='_'):
