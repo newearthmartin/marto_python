@@ -91,3 +91,8 @@ def cut_str(strng, length):
 
 def str_if(val, default_value=None):
     return str(val) if val else default_value
+
+def left_pad(s, total_digits, with_char='0'):
+    padding = total_digits - len(s)
+    if padding <= 0: return s
+    return with_char * padding + s

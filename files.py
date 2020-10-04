@@ -29,3 +29,8 @@ def read_lines(f, remove_empty=False):
     lines = [line.strip() for line in lines]
     if remove_empty: lines = [s for s in lines if s]
     return lines
+
+
+def get_extension(filename):
+    parts = filename.split('.')
+    return parts[-1].lower()
