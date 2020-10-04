@@ -7,5 +7,5 @@ def page(request, _):
     request_context = RequestContext(request)
     if 'page' not in request_context or not request_context['page']:
         raise Http404
-    return render('page.html', {})
+    return render(request, 'page.html', {})
 
