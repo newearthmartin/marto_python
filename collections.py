@@ -19,10 +19,15 @@ def to_dict(lst, map_func):
     return dct
 
 
+def map_dict(dct, map_fn):
+    rv = {}
+    for k,v in dct.items():
+        rv[k] = map_fn(k, v)
+    return rv
+
+
 def to_list(dct, sorting_key_fn=None):
-    lst = []
-    for k, v in dct.iteritems():
-        lst.append((k, v))
+    lst = list(dct.items())
     if sorting_key_fn:
         lst.sort(key=sorting_key_fn)
     return lst
@@ -60,29 +65,45 @@ def dict_encode(obj, encoder=None):
     useful for serializing objects to JSON
     use: json.dumps(dict_encode(obj,encoder=some_encoder_func))
     """
-    if obj is None: return None
-    if type(obj) == dict:
+    if obj is None:
+        return None
+    elif isinstance(obj, str):
+        return obj
+    elif type(obj) == dict:
         rv = {}
-        for k, v in obj.iteritems():
+        for k, v in obj.items():
             rv[k] = dict_encode(v, encoder)
         return rv
-    if hasattr(obj, '__iter__'):
+    elif hasattr(obj, '__iter__'):
         rv = []
         for elem in obj:
             rv.append(dict_encode(elem, encoder))
         return rv
-    if not hasattr(obj, '__dict__'):
+    elif not hasattr(obj, '__dict__'):
         return obj
-    if encoder:
-        val = encoder(obj)
-        if val is not None: return dict_encode(val, encoder)
-    raise(Exception('Could not encode %s to dictionary' % type(obj)))
+    else:
+        # is object
+        if not encoder:
+            raise Exception(f"Can't encode object of type {type(obj)} without an encoder")
+        return dict_encode(encoder(obj), encoder)
 
 
 def first(condition, iterable):
     for item in iterable:
         if condition(item): return item
     return None
+
+
+def filter_json_encodable(dct):
+    rv = {}
+    for k,v in dct.items():
+        try:
+            json.dumps(k)
+            json.dumps(v)
+            rv[k] = v
+        except:
+            pass
+    return rv
 
 
 def load_json(str, default=None):
@@ -96,3 +117,8 @@ def load_json(str, default=None):
         return default
     else:
         return {}
+
+
+def contains_non_empty(lst):
+    filtered = list(filter(lambda e: e, lst))
+    return len(filtered) > 0
