@@ -15,7 +15,7 @@ def site_view_only(func):
 
 @site_view_only
 def messages(request):
-    logger.debug('MESSAGES CONTEXT PROCESSOR %s' % request.path)
+    logger.debug(f'MESSAGES CONTEXT PROCESSOR {request.path}')
     if 'messages' in request.session:
         msgs = request.session['messages']
         request.session['messages'] = None
@@ -26,17 +26,17 @@ def messages(request):
 
 @site_view_only
 def settings(request):
-    logger.debug('SETTINGS CONTEXT PROCESSOR %s' % request.path)
+    logger.debug(f'SETTINGS CONTEXT PROCESSOR {request.path}')
     return {'settings': the_settings}
 
 
 @site_view_only
 def site(request):
-    logger.debug('SITE CONTEXT PROCESSOR %s' % request.path)
+    logger.debug(f'SITE CONTEXT PROCESSOR {request.path}')
     return {'site': RequestSite(request)}
 
 
 @site_view_only
 def current_path(request):
-    logger.debug('CURRENT_PATH CONTEXT PROCESSOR %s' % request.path)
+    logger.debug(f'CURRENT_PATH CONTEXT PROCESSOR {request.path}')
     return {'current_path': request.get_full_path()}
