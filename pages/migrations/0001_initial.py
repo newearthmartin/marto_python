@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 from django.db import models, migrations
@@ -14,11 +15,11 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('titulo', models.CharField(max_length=255)),
-                ('seccion', models.CharField(max_length=10, choices=[('PR', 'men\xfa principal'), ('FO', 'pie de p\xe1gina')])),
+                ('seccion', models.CharField(max_length=10, choices=[(b'PR', 'men\xfa principal'), (b'FO', 'pie de p\xe1gina')])),
                 ('indice', models.IntegerField(default=0)),
                 ('url', models.CharField(max_length=255, null=True, blank=True)),
                 ('total_url', models.CharField(max_length=255, null=True, blank=True)),
-                ('padre', models.ForeignKey(related_name='children', blank=True, to='pages.Menu', null=True)),
+                ('padre', models.ForeignKey(related_name=b'children', blank=True, to='pages.Menu', null=True)),
             ],
             options={
                 'verbose_name': 'men\xfa',
