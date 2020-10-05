@@ -59,7 +59,7 @@ class EmailConfirmationMixin(models.Model):
             self.generate_confirmation_key()
 
     def generate_confirmation_key(self):
-        self.email_confirmation_key = get_random_string()
+        self.email_confirmation_key = get_random_string(length=32)
         self.email_confirmed = False
         self.save(update_fields=['email_confirmed', 'email_confirmation_key'])
 
