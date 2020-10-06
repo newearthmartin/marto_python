@@ -6,7 +6,7 @@ class Command(BaseCommand):
     help = 'cleans email database'
 
     def handle(self, *args, **options):
-        msgs = EmailMessage.objects.filter(subject__contains='[Django] ERROR:').all()
+        msgs = EmailMessage.objects.filter(subject__contains='[Django] ERROR').all()
         print(f'There are {len(msgs)} django error messages, cleaning...')
         for msg in msgs:
             msg.delete()
