@@ -155,5 +155,6 @@ def db_load():
     load the whole db on local computer
     """
     local('tar xvfz data/db.tgz')
+    local('./manage.py django_clear_tables')
     local('./manage.py loaddata data/db.json')
     local('rm data/db.json')
