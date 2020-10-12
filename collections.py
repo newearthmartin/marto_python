@@ -21,7 +21,7 @@ def to_dict(lst, map_func):
 
 def map_dict(dct, map_fn):
     rv = {}
-    for k,v in dct.items():
+    for k, v in dct.items():
         rv[k] = map_fn(k, v)
     return rv
 
@@ -63,7 +63,7 @@ def list2comma_separated(the_list):
 def dict_encode(obj, encoder=None):
     """
     useful for serializing objects to JSON
-    use: json.dumps(dict_encode(obj,encoder=some_encoder_func))
+    use: json.dumps(dict_encode(obj, encoder=some_encoder_func))
     """
     if obj is None:
         return None
@@ -96,7 +96,7 @@ def first(condition, iterable):
 
 def filter_json_encodable(dct):
     rv = {}
-    for k,v in dct.items():
+    for k, v in dct.items():
         try:
             json.dumps(k)
             json.dumps(v)
