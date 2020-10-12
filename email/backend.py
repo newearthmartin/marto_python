@@ -88,7 +88,7 @@ class DBEmailBackend(DecoratorBackend):
         db_emails = list(map(DBEmailBackend.django_message_to_db_email, email_messages))
         for email in db_emails:
             email.save()
-        if setting('EMAIL_DB_SEND_IMMEDIATELY', False):
+        if setting('EMAIL_DB_SEND_IMMEDIATELY', True):
             logger.debug('sending emails now')
             self.send_emails(db_emails)
         else:
@@ -107,8 +107,8 @@ class DBEmailBackend(DecoratorBackend):
         """
         sends all db emails in list.
         """
-        max_today = getattr(settings, 'EMAIL_DB_BACKEND_MAX_DAILY_TOTAL', 2000)
-        max_by_subject = getattr(settings, 'EMAIL_DB_BACKEND_MAX_DAILY_BY_SUBJECT', 700)
+        max_today = getattr(settings, 'EMAIL_DB_MAX_DAILY_TOTAL', 2000)
+        max_by_subject = getattr(settings, 'EMAIL_DB_MAX_DAILY_BY_SUBJECT', 700)
 
         yesterday24hs = timezone.now() - datetime.timedelta(days=1)
         emails_sent_today = EmailMessage.objects.filter(sent=True).filter(sent_on__gt=yesterday24hs)
