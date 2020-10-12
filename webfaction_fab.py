@@ -91,6 +91,28 @@ def migrate():
 
 
 @task
+def requirements():
+    """
+    install pip requirements
+    """
+    require('hosts', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    with prefix(env.venv_app):
+        run("pip install -r requirements.txt")
+
+
+@task
+def upgrade_pip():
+    """
+    upgrade pip
+    """
+    require('hosts', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    with prefix(env.venv_app):
+        run("pip install --upgrade pip")
+
+
+@task
 def restart():
     """
     Restart apache on the server.
