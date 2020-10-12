@@ -1,20 +1,19 @@
+import logging
 import math
 import pdfkit
 import datetime
 import importlib
-
-
 from pytz import timezone as pytz_timezone, utc
 from types import BuiltinFunctionType, BuiltinMethodType,  FunctionType, MethodType, LambdaType
 from functools import partial
-
 from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
-
-
 from .collections import add_list_elem
+
+
+logger = logging.getLogger(__name__)
 
 
 class ErrorCode:
@@ -127,7 +126,7 @@ def setting(property_name, default=None):
     try:
         val = getattr(settings, property_name)
     except:
-        print('WARNING:', property_name, ' not found in settings module')
+        logger.debug(f'{property_name} not found in settings module')
         val = default
     return val
 
