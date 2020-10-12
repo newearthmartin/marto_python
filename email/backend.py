@@ -56,9 +56,8 @@ class DBEmailBackend(DecoratorBackend):
     def __init__(self, *args, **kwargs):
         super(DBEmailBackend, self).__init__(*args, **kwargs)
         if not self.inner_backend:
-            class_name = getattr(settings,
-                                 'EMAIL_DB_BACKEND_INNER_BACKEND',
-                                 'django.core.mail.backends.smtp.EmailBackend')
+            class_name = setting('EMAIL_DB_INNER_BACKEND',
+                                 default='django.core.mail.backends.smtp.EmailBackend')
             if class_name:
                 self.set_inner_backend_class(class_name)
 
@@ -89,7 +88,7 @@ class DBEmailBackend(DecoratorBackend):
         db_emails = list(map(DBEmailBackend.django_message_to_db_email, email_messages))
         for email in db_emails:
             email.save()
-        if getattr(settings, "EMAIL_DB_BACKEND_SEND_IMMEDIATELY", False):
+        if setting('EMAIL_DB_SEND_IMMEDIATELY', False):
             logger.debug('sending emails now')
             self.send_emails(db_emails)
         else:
@@ -184,11 +183,12 @@ class FilteringEmailBackend(DecoratorBackend):
     redirect_to = []
 
     def __init__(self, *args, **kwargs):
-        class_name = getattr(settings, 'EMAIL_FILTERING_BACKEND_INNER_BACKEND')
+        class_name = setting('EMAIL_FILTERING_INNER_BACKEND',
+                             default='django.core.mail.backends.smtp.EmailBackend')
         super(FilteringEmailBackend, self).__init__(*args, inner_backend_class=class_name, **kwargs)
-        self.filter = setting('EMAIL_FILTERING_BACKEND_FILTER', default=True)
-        self.pass_emails = setting('EMAIL_FILTERING_BACKEND_PASS_EMAILS', default=[])
-        self.redirect_to = setting('EMAIL_FILTERING_BACKEND_REDIRECT_TO', default=[])
+        self.filter = setting('EMAIL_FILTERING_FILTER', default=True)
+        self.pass_emails = setting('EMAIL_FILTERING_PASS_EMAILS', default=[])
+        self.redirect_to = setting('EMAIL_FILTERING_REDIRECT_TO', default=[])
 
     def send_messages(self, email_messages):
         for message in email_messages:
