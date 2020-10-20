@@ -15,16 +15,14 @@ def prod():
     print('PRODUCTION environment')
     env.hosts = [fab_settings['PROD_SERVER']]
     env.remote_app_dir = os.path.join(fab_settings['APP_DIR'], fab_settings['APP_NAME'])
-    env.remote_apache_dir = os.path.join(fab_settings['APP_DIR'], 'apache2')
+    env.restart_script = os.path.join(fab_settings['APP_DIR'], fab_settings['RESTART_SCRIPT'])
     env.venv_app = fab_settings['VENV_SCRIPT']
 
 
 @task
 def test():
     print('TEST environment')
-    env.hosts = [fab_settings['PROD_SERVER']]
-    env.remote_app_dir = os.path.join(fab_settings['APP_DIR_TEST'], fab_settings['APP_NAME'])
-    env.remote_apache_dir = os.path.join(fab_settings['APP_DIR_TEST'], 'apache2')
+    prod()
     env.venv_app = fab_settings['VENV_SCRIPT_TEST']
 
 
@@ -91,13 +89,35 @@ def migrate():
 
 
 @task
+def requirements():
+    """
+    install pip requirements
+    """
+    require('hosts', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    with prefix(env.venv_app):
+        run("pip install -r requirements.txt")
+
+
+@task
+def upgrade_pip():
+    """
+    upgrade pip
+    """
+    require('hosts', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    with prefix(env.venv_app):
+        run("pip install --upgrade pip")
+
+
+@task
 def restart():
     """
     Restart apache on the server.
     """
     require('hosts', provided_by=[prod])
-    require('remote_apache_dir', provided_by=[prod])
-    run(f'{env.remote_apache_dir}/bin/restart;')
+    require('restart_script', provided_by=[prod])
+    run(env.restart_script)
 
 
 @task
