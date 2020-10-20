@@ -4,7 +4,7 @@ from fabfile_settings import fab_settings
 
 
 def get_app_ssh_path():
-    return f"{fab_settings['PROD_SERVER']}:{fab_settings['APP_DIR']}/{fab_settings['APP_NAME']}"
+    return f"{fab_settings['PROD_SERVER']}:{fab_settings['APP_DIR']}/{fab_settings['DJANGO_APP_DIR']}"
 
 
 ################ ENVIRONMENT ################
@@ -14,8 +14,9 @@ def get_app_ssh_path():
 def prod():
     print('PRODUCTION environment')
     env.hosts = [fab_settings['PROD_SERVER']]
-    env.remote_app_dir = os.path.join(fab_settings['APP_DIR'], fab_settings['APP_NAME'])
-    env.restart_script = os.path.join(fab_settings['APP_DIR'], fab_settings['RESTART_SCRIPT'])
+    env.webapp_dir = fab_settings['APP_DIR']
+    env.remote_app_dir = os.path.join(env.webapp_dir, fab_settings['DJANGO_DIR'])
+    env.restart_script = fab_settings['RESTART_SCRIPT']
     env.venv_app = fab_settings['VENV_SCRIPT']
 
 
@@ -117,7 +118,8 @@ def restart():
     """
     require('hosts', provided_by=[prod])
     require('restart_script', provided_by=[prod])
-    run(env.restart_script)
+    with cd(env.webapp_dir):
+        run(env.restart_script)
 
 
 @task
