@@ -4,7 +4,7 @@ from fabfile_settings import fab_settings
 
 
 def get_app_ssh_path():
-    return f"{fab_settings['PROD_SERVER']}:{fab_settings['APP_DIR']}/{fab_settings['DJANGO_APP_DIR']}"
+    return f"{fab_settings['PROD_SERVER']}:{fab_settings['APP_DIR']}/{fab_settings['APP_DJANGO_DIR']}"
 
 
 ################ ENVIRONMENT ################
@@ -15,7 +15,6 @@ def prod():
     print('PRODUCTION environment')
     env.hosts = [fab_settings['PROD_SERVER']]
     env.webapp_dir = fab_settings['APP_DIR']
-    env.remote_app_dir = os.path.join(env.webapp_dir, fab_settings['DJANGO_DIR'])
     env.restart_script = fab_settings['RESTART_SCRIPT']
     env.venv_app = fab_settings['VENV_SCRIPT']
 
@@ -128,7 +127,6 @@ def deploy():
     push, pull, collect static, restart
     """
     require('hosts', provided_by=[prod])
-    require('remote_app_dir', provided_by=[prod])
     require('venv_app', provided_by=[prod])
     push()
     deploy_django()
@@ -137,7 +135,6 @@ def deploy():
 @task
 def deploy_django():
     require('hosts', provided_by=[prod])
-    require('remote_app_dir', provided_by=[prod])
     require('venv_app', provided_by=[prod])
     collectstatic()
     migrate()
@@ -152,7 +149,8 @@ def media_sync():
     """
     Download production media files to local computer
     """
-    local(f'rsync -avz {get_app_ssh_path()}/media/ media/')
+    ssh_path = get_app_ssh_path()
+    local(f'rsync -avz {ssh_path}/media/ media/')
 
 
 @task
