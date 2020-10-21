@@ -178,7 +178,6 @@ class DBEmailBackend(DecoratorBackend):
 
 
 class FilteringEmailBackend(DecoratorBackend):
-    filter = True
     pass_emails = []
     redirect_to = []
 
@@ -186,23 +185,20 @@ class FilteringEmailBackend(DecoratorBackend):
         class_name = setting('EMAIL_FILTERING_INNER_BACKEND',
                              default='django.core.mail.backends.smtp.EmailBackend')
         super(FilteringEmailBackend, self).__init__(*args, inner_backend_class=class_name, **kwargs)
-        self.filter = setting('EMAIL_FILTERING_FILTER', default=True)
         self.pass_emails = setting('EMAIL_FILTERING_PASS_EMAILS', default=[])
         self.redirect_to = setting('EMAIL_FILTERING_REDIRECT_TO', default=[])
 
     def send_messages(self, email_messages):
         for message in email_messages:
             send = True
-            if self.filter:
-                all_recipients = message.to + message.cc + message.bcc
-                for address in all_recipients:
-                    if address not in self.pass_emails:
-                        send = False
-            message_string = f'{message.subject} (' \
-                             f' to:{list2comma_separated(message.to)}' \
-                             f' cc:{list2comma_separated(message.cc)}' \
-                             f' bcc:{list2comma_separated(message.bcc)}' \
-                             f')'
+            all_recipients = message.to + message.cc + message.bcc
+            for address in all_recipients:
+                if address not in self.pass_emails:
+                    send = False
+            message_to = list2comma_separated(message.to)
+            message_cc = list2comma_separated(message.cc)
+            message_bcc = list2comma_separated(message.bcc)
+            message_string = f'{message.subject} (to:{message_to} cc:{message_cc} bcc:{message_bcc})'
             if send:
                 status = 'SENDING E-MAIL - ' + message_string
             else:
