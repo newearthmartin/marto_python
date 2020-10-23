@@ -200,9 +200,9 @@ class FilteringEmailBackend(DecoratorBackend):
             message_bcc = list2comma_separated(message.bcc)
             message_string = f'{message.subject} (to:{message_to} cc:{message_cc} bcc:{message_bcc})'
             if send:
-                status = 'SENDING E-MAIL - ' + message_string
+                status = 'filter pass - ' + message_string
             else:
-                status = 'FILTERING E-MAIL - ' + message_string
+                status = 'filter NOT pass - ' + message_string
                 if self.redirect_to:
                     message.subject = 'REDIRECTED - ' + message_string
                     message.to = self.redirect_to
