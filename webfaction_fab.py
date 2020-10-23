@@ -12,18 +12,12 @@ def get_app_ssh_path():
 
 @task
 def prod():
-    print('PRODUCTION environment')
+    env.environment_name = fab_settings['ENVIRONMENT_NAME']
     env.hosts = [fab_settings['PROD_SERVER']]
     env.webapp_dir = fab_settings['APP_DIR']
     env.restart_script = fab_settings['RESTART_SCRIPT']
     env.venv_app = fab_settings['VENV_SCRIPT']
-
-
-@task
-def test():
-    print('TEST environment')
-    prod()
-    env.venv_app = fab_settings['VENV_SCRIPT_TEST']
+    print(f'{env.environment_name} environment')
 
 
 ################ GIT ################
