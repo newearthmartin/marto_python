@@ -172,3 +172,75 @@ def db_load():
     local('./manage.py django_clear_tables')
     local('./manage.py loaddata data/db.json')
     local('rm data/db.json')
+
+
+################ INITIAL DB ################
+
+
+@task
+def initial_dump():
+    """
+    dump initial data on server and retrieve it
+    """
+    require('hosts', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    dump_initial_models = fab_settings["DUMP_INITIAL"]
+    with prefix(env.venv_app):
+        run(f'./manage.py dumpdata {dump_initial_models} --indent=4 > data/initial.json')
+    local(f'scp {get_app_ssh_path()}/data/initial.json data')
+
+
+@task
+def initial_load():
+    """
+    load initial data on local computer
+    """
+    local('./manage.py loaddata data/initial.json')
+
+
+@task
+def reset_local_db():
+    """
+    resets local db
+    """
+    username = fab_settings['SUPERUSER_NAME']
+    email = fab_settings['SUPERUSER_MAIL']
+    local('rm db.sqlite3')
+    local('./manage.py migrate')
+    print('\n\n\nenter admin password:\n\n\n')
+    local(f'./manage.py createsuperuser --username {username} --email {email}')
+    initial_load()
+
+
+################ RUN JOBS ################
+
+
+@task
+def hourly():
+    """
+    run hourly jobs, including submit mails
+    """
+    require('venv_app', provided_by=[prod])
+    with prefix(env.venv_app):
+        run("python manage.py runjobs hourly")
+
+
+################ CELERY ################
+
+
+@task
+def celery():
+    """
+    restarts celery
+    """
+    require('hosts', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    run('monit restart celery')
+
+
+@task
+def monit():
+    require('hosts', provided_by=[prod])
+    require('venv_app', provided_by=[prod])
+    run("monit")
+    run("monit status")
