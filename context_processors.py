@@ -3,6 +3,7 @@ import logging
 from django.conf import settings as the_settings
 from django.contrib.sites.requests import RequestSite
 from marto_python.util import is_site_view
+from marto_python.url import get_server_url
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,10 @@ def settings(request):
 
 @site_view_only
 def site(request):
-    return {'site': RequestSite(request)}
+    return {
+        'site': RequestSite(request),
+        'server_url': get_server_url(),
+    }
 
 
 @site_view_only
