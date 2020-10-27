@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.sites.models import Site
 from django.conf import settings
 from marto_python.collections import is_list_or_tuple
+from marto_python.url import get_server_url
 
 email_validator = EmailValidator()
 
@@ -27,6 +28,7 @@ def send_email(to, subject, template_file, context_dict, sender=settings.DEFAULT
     if not is_list_or_tuple(to):
         to = [to]
     context_dict['site'] = Site.objects.get_current()
+    context_dict['server_url'] = get_server_url()
     email_html = render_to_string(template_file, context_dict)
     send(to, subject, email_html, sender=sender)
 
