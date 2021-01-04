@@ -11,4 +11,5 @@ class Command(BaseCommand):
             Q(subject__contains='[Django] CRITICAL'))
         print(f'There are {msgs.count()} django error messages, cleaning...')
         for msg in msgs.all():
+            print('deleting: ' + msg.subject[0:20])
             msg.delete()
