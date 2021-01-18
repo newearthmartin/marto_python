@@ -1,7 +1,8 @@
 import json
 import datetime
-import smtplib
 import logging
+
+from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused
 
 from django.conf import settings
 from django.utils import timezone
@@ -154,16 +155,16 @@ class DBEmailBackend(DecoratorBackend):
                 super(DBEmailBackend, self).send_messages([email_message])
                 email.send_successful = True
                 email.sent = True
-            except (smtplib.SMTPDataError, smtplib.SMTPRecipientsRefused) as e:
+            except (SMTPDataError, SMTPRecipientsRefused) as e:
                 email.fail_message = str(e)
                 logger.warning(f'error sending email to {email.to}', exc_info=True)
                 email.sent = True
             except TypeError as e:
                 email.fail_message = str(e)
-                logger.warning(f'error sending email to {email.to}', exc_info=True)
+                logger.error(f'Type error when sending email to {email.to}', exc_info=True)
                 email.sent = True
-            except smtplib.SMTPConnectError:
-                logger.warning(f'error sending email to {email.to}', exc_info=True)
+            except SMTPConnectError:
+                logger.warning(f'SMTP connect error when sending email to {email.to}', exc_info=True)
             except:
                 msg = f'unknown exception sending email to {email.to}'
                 has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
