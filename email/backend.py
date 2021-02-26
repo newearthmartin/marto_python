@@ -155,16 +155,21 @@ class DBEmailBackend(DecoratorBackend):
                 super(DBEmailBackend, self).send_messages([email_message])
                 email.send_successful = True
                 email.sent = True
-            except (SMTPDataError, SMTPRecipientsRefused) as e:
+            except SMTPRecipientsRefused as e:
                 email.fail_message = str(e)
-                logger.warning(f'error sending email to {email.to}', exc_info=True)
                 email.sent = True
+                logger.warning(f'Email recipients refused: {email.to}', exc_info=True)
+            except SMTPDataError as e:
+                email.fail_message = str(e)
+                email.sent = True
+                logger.error(f'SMTP data error sending email to {email.to}', exc_info=True)
             except TypeError as e:
-                email.fail_message = str(e)
                 logger.error(f'Type error when sending email to {email.to}', exc_info=True)
-                email.sent = True
-            except SMTPConnectError:
-                logger.warning(f'SMTP connect error when sending email to {email.to}', exc_info=True)
+                # FIXME: why are we marking this as sent? is it an error with the email? check and mark accordingly
+                # email.fail_message = str(e)
+                # email.sent = True
+            except (SMTPConnectError, ConnectionResetError):
+                logger.warning(f'Connection error when sending email to {email.to}', exc_info=True)
             except:
                 msg = f'unknown exception sending email to {email.to}'
                 has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
