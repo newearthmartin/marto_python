@@ -8,6 +8,7 @@ from types import BuiltinFunctionType, BuiltinMethodType,  FunctionType, MethodT
 from functools import partial
 from django import forms
 from django.conf import settings
+from django.utils import timezone
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
 from .collections import add_list_elem
@@ -30,20 +31,11 @@ def add_message(request, message):
 
 def as_datetime(ts):
     if ts < 0: return None
-    return datetime.datetime.fromtimestamp(float(ts), tz=utc)
+    return datetime.datetime.utcfromtimestamp(float(ts)).astimezone()
 
 
 def as_timestamp(dt):
     return int(dt.timestamp())
-
-
-def make_tz_aware(datetime, tz=None):
-    """
-    makes the datetime tz aware, if no tz is passed, uses the tz from settings
-    """
-    if not tz:
-        tz = pytz_timezone(settings.TIME_ZONE)
-    return tz.localize(datetime)
 
 
 def custom_range(l, range_first=None, range_last=None):

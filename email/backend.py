@@ -111,7 +111,7 @@ class DBEmailBackend(DecoratorBackend):
         max_today = getattr(settings, 'EMAIL_DB_MAX_DAILY_TOTAL', 2000)
         max_by_subject = getattr(settings, 'EMAIL_DB_MAX_DAILY_BY_SUBJECT', 700)
 
-        yesterday24hs = timezone.now() - datetime.timedelta(days=1)
+        yesterday24hs = timezone.localtime() - datetime.timedelta(days=1)
         emails_sent_today = EmailMessage.objects.filter(sent=True).filter(sent_on__gt=yesterday24hs)
         num_emails_sent_today = emails_sent_today.count()
         total_allowed_emails = max_today - num_emails_sent_today
@@ -178,7 +178,7 @@ class DBEmailBackend(DecoratorBackend):
                 else:
                     logger.error(msg, exc_info=True)
             if email.sent:
-                email.sent_on = timezone.now()
+                email.sent_on = timezone.localtime()
                 email.save()
         logger.debug(f'sending {len(emails)} emails - finished')
 
