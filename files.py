@@ -1,6 +1,7 @@
 import os
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
+from random import randint
 
 
 class OverwriteStorage(FileSystemStorage):
@@ -34,3 +35,9 @@ def read_lines(f, remove_empty=False):
 def get_extension(filename):
     parts = filename.split('.')
     return parts[-1].lower()
+
+def random_filename(prefix, extension):
+    while True:
+        out_file = '%s_%d.%s' % (prefix, randint(0, 1000000), extension)
+        if not os.path.exists(out_file):
+            return out_file
