@@ -32,9 +32,11 @@ def map_dict(dct, map_fn):
     return rv
 
 
-def to_list(dct, sorting_key_fn=None):
+def to_list(dct, sort_by_key=False, sorting_key_fn=None):
     lst = list(dct.items())
-    if sorting_key_fn:
+    if sort_by_key:
+        lst.sort(key=lambda e: e[0])
+    elif sorting_key_fn:
         lst.sort(key=sorting_key_fn)
     return lst
 
