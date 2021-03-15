@@ -1,4 +1,10 @@
 import json
+import logging
+from json import JSONEncoder
+from decimal import Decimal
+
+
+logger = logging.getLogger(__name__)
 
 
 def add_list_elem(d, key, elem):
@@ -92,6 +98,21 @@ def first(condition, iterable):
     for item in iterable:
         if condition(item): return item
     return None
+
+
+class DictJsonEncoder(JSONEncoder):
+    def default(self, o):
+        dictionary = getattr(o, '__dict__', None)
+        if dictionary:
+            return dictionary
+        elif isinstance(o, Decimal):
+            return float(o)
+        else:
+            try:
+                return json.dumps(o)
+            except TypeError:
+                logger.warning(f"Don't know how to json encode {o} - using str")
+                return str(o)
 
 
 def filter_json_encodable(dct):
