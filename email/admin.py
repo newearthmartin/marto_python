@@ -14,7 +14,11 @@ class EmailMessageAdminForm(forms.ModelForm):
             'to': AdminTextInputWidget,
             'cc': AdminTextInputWidget,
             'bcc': AdminTextInputWidget,
-            'body': TinyMCE(attrs={'cols': 120, 'rows': 50}),
+            'body': TinyMCE(attrs={'cols': 120, 'rows': 50},
+                            mce_attrs={
+                                'relative_urls': False,
+                                'remove_script_host': False,
+                            }),
         }
 
 
