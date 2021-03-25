@@ -41,8 +41,12 @@ def to_list(dct, sort_by_key=False, sorting_key_fn=None):
     return lst
 
 
-def filter_map(old_map, keys):
-    return {k: old_map[k] for k in old_map if k in keys}
+def filter_map(old_map, predicate):
+    return {k: old_map[k] for k in old_map if predicate(k)}
+
+
+def filter_map_keys(old_map, keys):
+    return filter_map(old_map, lambda k: k in keys)
 
 
 def get_or_add_new(dct, key, new_elem_func):
