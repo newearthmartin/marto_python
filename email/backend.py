@@ -168,7 +168,7 @@ class DBEmailBackend(DecoratorBackend):
                 # FIXME: why are we marking this as sent? is it an error with the email? check and mark accordingly
                 # email.fail_message = str(e)
                 # email.sent = True
-            except (SMTPConnectError, ConnectionResetError):
+            except (SMTPConnectError, ConnectionResetError, TimeoutError):
                 logger.warning(f'Connection error when sending email to {email.to}', exc_info=True)
             except:
                 msg = f'unknown exception sending email to {email.to}'
