@@ -26,10 +26,7 @@ def to_dict(lst, map_func):
 
 
 def map_dict(dct, map_fn):
-    rv = {}
-    for k, v in dct.items():
-        rv[k] = map_fn(k, v)
-    return rv
+    return {k: map_fn(k, v) for k, v in dct.items()}
 
 
 def to_list(dct, sort_by_key=False, sorting_key_fn=None):
