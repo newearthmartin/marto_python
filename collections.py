@@ -2,19 +2,21 @@ import json
 import logging
 from json import JSONEncoder
 from decimal import Decimal
+from typing import Any, List, Dict, Callable, Tuple, Optional, Iterable
+from .mypy import Predicate
 
 
 logger = logging.getLogger(__name__)
 
 
-def add_list_elem(d, key, elem):
-    if key in d and d[key] is not None:
-        d[key].append(elem)
+def add_list_elem(dct, key, elem):
+    if key in dct and dct[key] is not None:
+        dct[key].append(elem)
     else:
-        d[key] = [elem]
+        dct[key] = [elem]
 
 
-def to_dict(lst, map_func):
+def to_dict(lst: List, map_func: Callable) -> Dict:
     dct = {}
     for elem in lst:
         kv = map_func(elem)
@@ -25,11 +27,11 @@ def to_dict(lst, map_func):
     return dct
 
 
-def map_dict(dct, map_fn):
+def map_dict(dct: Dict, map_fn: Callable) -> Dict:
     return {k: map_fn(k, v) for k, v in dct.items()}
 
 
-def to_list(dct, sort_by_key=False, sorting_key_fn=None):
+def to_list(dct: Dict, sort_by_key: bool = False, sorting_key_fn: Optional[Callable] = None):
     lst = list(dct.items())
     if sort_by_key:
         lst.sort(key=lambda e: e[0])
@@ -38,35 +40,29 @@ def to_list(dct, sort_by_key=False, sorting_key_fn=None):
     return lst
 
 
-def filter_map(old_map, predicate):
-    return {k: old_map[k] for k in old_map if predicate(k)}
+def filter_map(dct: Dict, predicate: Predicate) -> Dict:
+    return {k: dct[k] for k in dct if predicate(k)}
 
 
-def filter_map_keys(old_map, keys):
-    return filter_map(old_map, lambda k: k in keys)
+def filter_map_keys(dct: Dict, keys: Iterable) -> Dict:
+    return filter_map(dct, lambda k: k in keys)
 
 
-def get_or_add_new(dct, key, new_elem_func):
+def get_or_add_new(dct: Dict, key: Any, new_elem_func: Callable) -> Any:
     if key not in dct:
         dct[key] = new_elem_func()
     return dct[key]
 
 
-def is_list_or_tuple(x):
+def is_list_or_tuple(x: Any) -> bool:
     return isinstance(x, (list, tuple))
 
 
-def list2comma_separated(the_list):
-    if not the_list:
+def list2comma_separated(lst: List) -> str:
+    if not lst:
         return ''
-    s = ''
-    i = 0
-    for e in the_list:
-        if i != 0:
-            s += ','
-        i += 1
-        s += str(e)
-    return s
+    lst = [str(e) for e in lst]
+    return ','.join(lst)
 
 
 def dict_encode(obj, encoder=None):
@@ -97,9 +93,9 @@ def dict_encode(obj, encoder=None):
         return dict_encode(encoder(obj), encoder)
 
 
-def first(condition, iterable):
+def first(predicate: Predicate, iterable: Iterable) -> Optional[Any]:
     for item in iterable:
-        if condition(item): return item
+        if predicate(item): return item
     return None
 
 
@@ -118,7 +114,7 @@ class DictJsonEncoder(JSONEncoder):
                 return str(o)
 
 
-def filter_json_encodable(dct):
+def filter_json_encodable(dct: Dict) -> Dict:
     rv = {}
     for k, v in dct.items():
         try:
@@ -130,19 +126,18 @@ def filter_json_encodable(dct):
     return rv
 
 
-def load_json(str, default=None):
+def load_json(string: str, default: Optional[Any] = None) -> Any:
     """
     will load the json string if there is something in str
     otherwise will return the default object if set, otherwise {}
     """
-    if str:
-        return json.loads(str)
-    elif default is not None:
-        return default
-    else:
-        return {}
+    if string: return json.loads(string)
+    if default is not None: return default
+    return {}
 
 
-def contains_non_empty(lst):
-    filtered = list(filter(lambda e: e, lst))
-    return len(filtered) > 0
+def contains_non_empty(lst: List) -> bool:
+    for e in lst:
+        if e:
+            return True
+    return False
