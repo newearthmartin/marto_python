@@ -2,7 +2,7 @@ import json
 import logging
 from json import JSONEncoder
 from decimal import Decimal
-from typing import Any, List, Dict, Callable, Tuple, Optional, Iterable
+from typing import Any, Callable, Optional, Iterable
 from .mypy import Predicate
 
 
@@ -16,7 +16,7 @@ def add_list_elem(dct, key, elem):
         dct[key] = [elem]
 
 
-def to_dict(lst: List, map_func: Callable) -> Dict:
+def to_dict(lst: list, map_func: Callable) -> dict:
     dct = {}
     for elem in lst:
         kv = map_func(elem)
@@ -27,11 +27,11 @@ def to_dict(lst: List, map_func: Callable) -> Dict:
     return dct
 
 
-def map_dict(dct: Dict, map_fn: Callable) -> Dict:
+def map_dict(dct: dict, map_fn: Callable) -> dict:
     return {k: map_fn(k, v) for k, v in dct.items()}
 
 
-def to_list(dct: Dict, sort_by_key: bool = False, sorting_key_fn: Optional[Callable] = None):
+def to_list(dct: dict, sort_by_key: bool = False, sorting_key_fn: Optional[Callable] = None):
     lst = list(dct.items())
     if sort_by_key:
         lst.sort(key=lambda e: e[0])
@@ -40,15 +40,15 @@ def to_list(dct: Dict, sort_by_key: bool = False, sorting_key_fn: Optional[Calla
     return lst
 
 
-def filter_map(dct: Dict, predicate: Predicate) -> Dict:
+def filter_map(dct: dict, predicate: Predicate) -> dict:
     return {k: dct[k] for k in dct if predicate(k)}
 
 
-def filter_map_keys(dct: Dict, keys: Iterable) -> Dict:
+def filter_map_keys(dct: dict, keys: Iterable) -> dict:
     return filter_map(dct, lambda k: k in keys)
 
 
-def get_or_add_new(dct: Dict, key: Any, new_elem_func: Callable) -> Any:
+def get_or_add_new(dct: dict, key: Any, new_elem_func: Callable) -> Any:
     if key not in dct:
         dct[key] = new_elem_func()
     return dct[key]
@@ -58,7 +58,7 @@ def is_list_or_tuple(x: Any) -> bool:
     return isinstance(x, (list, tuple))
 
 
-def list2comma_separated(lst: List) -> str:
+def list2comma_separated(lst: list) -> str:
     if not lst:
         return ''
     lst = [str(e) for e in lst]
@@ -114,7 +114,7 @@ class DictJsonEncoder(JSONEncoder):
                 return str(o)
 
 
-def filter_json_encodable(dct: Dict) -> Dict:
+def filter_json_encodable(dct: dict) -> dict:
     rv = {}
     for k, v in dct.items():
         try:
@@ -136,7 +136,7 @@ def load_json(string: str, default: Optional[Any] = None) -> Any:
     return {}
 
 
-def contains_non_empty(lst: List) -> bool:
+def contains_non_empty(lst: list) -> bool:
     for e in lst:
         if e:
             return True
