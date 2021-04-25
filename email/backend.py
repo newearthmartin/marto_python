@@ -119,7 +119,7 @@ class DBEmailBackend(DecoratorBackend):
                      f' - already sent {num_emails_sent_today} emails'
                      f' - can send {total_allowed_emails} more')
         if total_allowed_emails < 0:
-            logger.error(f'Sent {num_emails_sent_today} emails but only {max_today} were allowed!')
+            logger.warning(f'Sent {num_emails_sent_today} emails but only {max_today} were allowed!')
             return
 
         allowed_emails = []
@@ -144,6 +144,11 @@ class DBEmailBackend(DecoratorBackend):
     def do_send(self, emails):
         logger.info(f'sending {len(emails)} emails')
         for email in emails:
+            # using log_fn to prevent infinite loop while sending errors to admins
+            # because logger.error creates a new email
+            has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
+            log_fn = logger.error if not has_admin_emails else logger.warning
+
             # check again if its not sent, for concurrency
             if email.sent:
                 logger.debug(f'email already sent {email.to} - {email.subject}')
@@ -162,9 +167,9 @@ class DBEmailBackend(DecoratorBackend):
             except SMTPDataError as e:
                 email.fail_message = str(e)
                 email.sent = True
-                logger.error(f'SMTP data error sending email to {email.to}', exc_info=True)
+                log_fn(f'SMTP data error sending email to {email.to}', exc_info=True)
             except TypeError as e:
-                logger.error(f'Type error when sending email to {email.to}', exc_info=True)
+                log_fn(f'Type error when sending email to {email.to}', exc_info=True)
                 # FIXME: why are we marking this as sent? is it an error with the email? check and mark accordingly
                 # email.fail_message = str(e)
                 # email.sent = True
@@ -172,11 +177,7 @@ class DBEmailBackend(DecoratorBackend):
                 logger.warning(f'Connection error when sending email to {email.to}', exc_info=True)
             except:
                 msg = f'unknown exception sending email to {email.to}'
-                has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
-                if has_admin_emails:
-                    logger.warning(msg, exc_info=True)
-                else:
-                    logger.error(msg, exc_info=True)
+                log_fn(msg, exc_info=True)
             if email.sent:
                 email.sent_on = timezone.localtime()
                 email.save()
