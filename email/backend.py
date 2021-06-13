@@ -10,7 +10,7 @@ from django.core.mail.backends.base import BaseEmailBackend
 
 from marto_python.email.models import EmailMessage
 from marto_python.util import get_full_class, load_class, setting
-from marto_python.collections import list2comma_separated
+from marto_python.collection_utils import list2comma_separated
 
 logger = logging.getLogger(__name__)
 

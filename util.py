@@ -11,7 +11,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
-from .collections import add_list_elem
+from .collection_utils import add_list_elem
 
 
 logger = logging.getLogger(__name__)
