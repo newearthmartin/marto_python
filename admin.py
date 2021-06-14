@@ -1,4 +1,6 @@
+from django.contrib.admin import SimpleListFilter
 from .util import is_function
+
 
 def foreign_field(field_name):
     def accessor(obj):
@@ -9,6 +11,23 @@ def foreign_field(field_name):
     accessor.__name__ = field_name
 
     return accessor
+
+
+class YesNoFilter(SimpleListFilter):
+    def lookups(self, request, model_admin):
+        return [
+            ('1', 'yes'),
+            ('0', 'no'),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            queryset = self.queryset_yes_no(request, queryset, self.value() == 'yes')
+        return queryset
+
+    def queryset_yes_no(self, request, queryset, is_yes):
+        raise NotImplementedError
+
 
 
 ff = foreign_field
