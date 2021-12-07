@@ -3,12 +3,11 @@ import math
 import pdfkit
 import datetime
 import importlib
-from pytz import timezone as pytz_timezone, utc
+
 from types import BuiltinFunctionType, BuiltinMethodType,  FunctionType, MethodType, LambdaType
 from functools import partial
 from django import forms
 from django.conf import settings
-from django.utils import timezone
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
 from .collection_utils import add_list_elem
