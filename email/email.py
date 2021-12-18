@@ -4,7 +4,7 @@ from django.core.mail.message import EmailMessage
 from django.core.exceptions import ValidationError
 from django.contrib.sites.models import Site
 from django.conf import settings
-from marto_python.collections import is_list_or_tuple
+from marto_python.collection_utils import is_list_or_tuple
 from marto_python.url import get_server_url
 
 email_validator = EmailValidator()

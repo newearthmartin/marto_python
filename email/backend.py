@@ -1,7 +1,8 @@
 import json
 import datetime
-import smtplib
 import logging
+
+from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused
 
 from django.conf import settings
 from django.utils import timezone
@@ -9,7 +10,7 @@ from django.core.mail.backends.base import BaseEmailBackend
 
 from marto_python.email.models import EmailMessage
 from marto_python.util import get_full_class, load_class, setting
-from marto_python.collections import list2comma_separated
+from marto_python.collection_utils import list2comma_separated
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +119,7 @@ class DBEmailBackend(DecoratorBackend):
                      f' - already sent {num_emails_sent_today} emails'
                      f' - can send {total_allowed_emails} more')
         if total_allowed_emails < 0:
-            logger.error(f'Sent {num_emails_sent_today} emails but only {max_today} were allowed!')
+            logger.warning(f'Sent {num_emails_sent_today} emails but only {max_today} were allowed!')
             return
 
         allowed_emails = []
@@ -143,6 +144,11 @@ class DBEmailBackend(DecoratorBackend):
     def do_send(self, emails):
         logger.info(f'sending {len(emails)} emails')
         for email in emails:
+            # using log_fn to prevent infinite loop while sending errors to admins
+            # because logger.error creates a new email
+            has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
+            log_fn = logger.error if not has_admin_emails else logger.warning
+
             # check again if its not sent, for concurrency
             if email.sent:
                 logger.debug(f'email already sent {email.to} - {email.subject}')
@@ -154,23 +160,24 @@ class DBEmailBackend(DecoratorBackend):
                 super(DBEmailBackend, self).send_messages([email_message])
                 email.send_successful = True
                 email.sent = True
-            except (smtplib.SMTPDataError, smtplib.SMTPRecipientsRefused) as e:
+            except SMTPRecipientsRefused as e:
                 email.fail_message = str(e)
-                logger.warning(f'error sending email to {email.to}', exc_info=True)
                 email.sent = True
+                logger.warning(f'Email recipients refused: {email.to}', exc_info=True)
+            except SMTPDataError as e:
+                email.fail_message = str(e)
+                email.sent = True
+                log_fn(f'SMTP data error sending email to {email.to}', exc_info=True)
             except TypeError as e:
-                email.fail_message = str(e)
-                logger.warning(f'error sending email to {email.to}', exc_info=True)
-                email.sent = True
-            except smtplib.SMTPConnectError:
-                logger.warning(f'error sending email to {email.to}', exc_info=True)
+                log_fn(f'Type error when sending email to {email.to}', exc_info=True)
+                # FIXME: why are we marking this as sent? is it an error with the email? check and mark accordingly
+                # email.fail_message = str(e)
+                # email.sent = True
+            except (SMTPConnectError, ConnectionResetError, TimeoutError):
+                logger.warning(f'Connection error when sending email to {email.to}', exc_info=True)
             except:
                 msg = f'unknown exception sending email to {email.to}'
-                has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
-                if has_admin_emails:
-                    logger.warning(msg, exc_info=True)
-                else:
-                    logger.error(msg, exc_info=True)
+                log_fn(msg, exc_info=True)
             if email.sent:
                 email.sent_on = timezone.now()
                 email.save()
