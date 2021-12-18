@@ -17,7 +17,7 @@ def as_int(string: str) -> Optional[int]:
     if not string: return None
     try:
         return int(string)
-    except:
+    except ValueError:
         return None
 
 
