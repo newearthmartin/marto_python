@@ -1,37 +1,6 @@
-import base64
-
 from decimal import Decimal
 from functools import reduce
-from Crypto.Cipher import DES
 from typing import Any, Optional
-
-from django.conf import settings
-
-
-def encrypt_and_encode(string: str) -> str:
-    """
-    encrypts and encodes into base16
-    the string must not contain trailing spaces (cause we need to add trailing spaces to have len % 8 = 0)
-    """
-    string_bytes = string.encode('utf-8')
-    excess = len(string_bytes) % 8
-    if excess != 0:
-        padding = ' ' * (8 - excess)
-        string_bytes += padding.encode('utf-8')
-    encrypted = _get_cipher().encrypt(string_bytes)
-    return base64.b16encode(encrypted).decode('ascii')
-
-
-def decode_and_decrypt(string: str) -> str:
-    """
-    we are assuming that the original data was utf-8
-    """
-    encrypted = base64.b16decode(string)
-    return _get_cipher().decrypt(encrypted).decode('utf-8').strip()
-
-
-def _get_cipher():
-    return DES.new(settings.SECRET_KEY[0:8].encode('utf-8'), DES.MODE_ECB)
 
 
 def replace_non_ascii(string: str, with_char: str = '_'):
