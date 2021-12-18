@@ -7,8 +7,6 @@ from typing import Any, Optional
 
 from django.conf import settings
 
-cipher = DES.new(settings.SECRET_KEY[0:8], DES.MODE_ECB)
-
 
 def encrypt_and_encode(string: str) -> str:
     """
@@ -20,7 +18,7 @@ def encrypt_and_encode(string: str) -> str:
     if excess != 0:
         padding = ' ' * (8 - excess)
         string_bytes += padding.encode('utf-8')
-    encrypted = cipher.encrypt(string_bytes)
+    encrypted = _get_cipher().encrypt(string_bytes)
     return base64.b16encode(encrypted).decode('ascii')
 
 
@@ -29,7 +27,11 @@ def decode_and_decrypt(string: str) -> str:
     we are assuming that the original data was utf-8
     """
     encrypted = base64.b16decode(string)
-    return cipher.decrypt(encrypted).decode('utf-8').strip()
+    return _get_cipher().decrypt(encrypted).decode('utf-8').strip()
+
+
+def _get_cipher():
+    return DES.new(settings.SECRET_KEY[0:8].encode('utf-8'), DES.MODE_ECB)
 
 
 def replace_non_ascii(string: str, with_char: str = '_'):
