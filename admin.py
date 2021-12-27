@@ -22,7 +22,7 @@ class YesNoFilter(SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value():
-            queryset = self.queryset_yes_no(request, queryset, self.value() == 'yes')
+            queryset = self.queryset_yes_no(request, queryset, self.value() == '1')
         return queryset
 
     def queryset_yes_no(self, request, queryset, is_yes):
