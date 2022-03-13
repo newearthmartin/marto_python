@@ -20,7 +20,7 @@ class DecoratorBackend(BaseEmailBackend):
     inner_backend = None
 
     def __init__(self, *args, **kwargs):
-        super(DecoratorBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         backend_instance = kwargs.get('inner_backend')
         backend_class = kwargs.get('inner_backend_class')
         if backend_instance: self.set_inner_backend(backend_instance)
@@ -50,12 +50,12 @@ class StackedEmailBackend(DecoratorBackend):
         inner_backend = None
         for backend_class in settings.EMAIL_BACKEND_STACK:
             inner_backend = load_class(backend_class)(*args, inner_backend=inner_backend, **kwargs)
-        super(StackedEmailBackend, self).__init__(*args, inner_backend=inner_backend, **kwargs)
+        super().__init__(*args, inner_backend=inner_backend, **kwargs)
 
 
 class DBEmailBackend(DecoratorBackend):
     def __init__(self, *args, **kwargs):
-        super(DBEmailBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not self.inner_backend:
             class_name = setting('EMAIL_DB_INNER_BACKEND',
                                  default='django.core.mail.backends.smtp.EmailBackend')
@@ -157,7 +157,7 @@ class DBEmailBackend(DecoratorBackend):
             email.sent = False
             email.send_successful = False
             try:
-                super(DBEmailBackend, self).send_messages([email_message])
+                super().send_messages([email_message])
                 email.send_successful = True
                 email.sent = True
             except SMTPRecipientsRefused as e:
@@ -191,7 +191,7 @@ class FilteringEmailBackend(DecoratorBackend):
     def __init__(self, *args, **kwargs):
         class_name = setting('EMAIL_FILTERING_INNER_BACKEND',
                              default='django.core.mail.backends.smtp.EmailBackend')
-        super(FilteringEmailBackend, self).__init__(*args, inner_backend_class=class_name, **kwargs)
+        super().__init__(*args, inner_backend_class=class_name, **kwargs)
         self.pass_emails = setting('EMAIL_FILTERING_PASS_EMAILS', default=[])
         self.redirect_to = setting('EMAIL_FILTERING_REDIRECT_TO', default=[])
 
@@ -221,4 +221,4 @@ class FilteringEmailBackend(DecoratorBackend):
                     status += ' - not redirecting'
             logger.info(status)
             if send:
-                super(FilteringEmailBackend, self).send_messages(email_messages)
+                super().send_messages(email_messages)
