@@ -58,6 +58,11 @@ def daterange(start_date, end_date):
         yield start_date + datetime.timedelta(n)
 
 
+def days_difference(date_past, date_future):
+    difference = date_future - date_past
+    return difference.total_seconds() / datetime.timedelta(days=1).total_seconds()
+
+
 def get_pk(obj):
     return obj.pk if obj else None
 
