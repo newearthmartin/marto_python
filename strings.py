@@ -73,3 +73,11 @@ def left_pad(s: str, total_digits: int, with_char: str = '0') -> str:
     padding = total_digits - len(s)
     if padding <= 0: return s
     return with_char * padding + s
+
+
+def human_list_str(strings: list[str], comma_str=', ', and_str=' and '):
+    if not strings: return ''
+    if len(strings) == 1:
+        return strings[0]
+    pre_and = strings[:-1]
+    return comma_str.join(pre_and) + and_str + strings[-1]
