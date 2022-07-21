@@ -1,5 +1,6 @@
 import json
 import logging
+from math import ceil
 from json import JSONEncoder
 from decimal import Decimal
 from typing import Any, Callable, Optional, Iterable
@@ -38,6 +39,15 @@ def to_list(dct: dict, sort_by_key: bool = False, sorting_key_fn: Optional[Calla
     elif sorting_key_fn:
         lst.sort(key=sorting_key_fn)
     return lst
+
+
+def split_chunks(lst: list, chunk_size: int) -> list[list]:
+    chunks = []
+    i = 0
+    while i < len(lst):
+        chunks.append(lst[i: i + chunk_size])
+        i += chunk_size
+    return chunks
 
 
 def filter_map(dct: dict, predicate: Predicate) -> dict:
