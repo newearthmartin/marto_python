@@ -224,6 +224,16 @@ def hourly():
         run("python manage.py runjobs hourly")
 
 
+@task
+def daily():
+    """
+    run daily jobs
+    """
+    require('venv_app')
+    with prefix(env.venv_app):
+        run("python manage.py runjobs daily")
+
+
 ################ CELERY ################
 
 
