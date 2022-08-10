@@ -54,6 +54,7 @@ def pip():
     require('hosts')
     require('venv_app')
     with prefix(env.venv_app):
+        run("pip install --upgrade pip")
         run("pip install -r requirements.txt")
 
 
