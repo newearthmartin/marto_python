@@ -109,6 +109,10 @@ def first(predicate: Predicate, iterable: Iterable) -> Optional[Any]:
     return None
 
 
+def exists(predicate: Predicate, iterable: Iterable) -> bool:
+    return first(predicate, iterable) is not None
+
+
 class DictJsonEncoder(JSONEncoder):
     def default(self, o):
         dictionary = getattr(o, '__dict__', None)
