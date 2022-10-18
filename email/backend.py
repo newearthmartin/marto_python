@@ -5,6 +5,7 @@ import logging
 from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused
 
 from django.conf import settings
+from django.db.models import QuerySet
 from django.utils import timezone
 from django.core.mail.backends.base import BaseEmailBackend
 
@@ -98,7 +99,7 @@ class DBEmailBackend(DecoratorBackend):
     def send_all(self):
         self.send_queryset(EmailMessage.objects)
 
-    def send_queryset(self, emails_queryset):
+    def send_queryset(self, emails_queryset: QuerySet):
         """
         sends all emails in the queryset that haven't been sent
         """
