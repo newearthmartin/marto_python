@@ -139,7 +139,7 @@ def deploy_django():
 
 
 @task
-def media_sync():
+def sync_media():
     """
     Download production media files to local computer
     """
