@@ -205,7 +205,7 @@ def reset_local_db():
     """
     username = fab_settings['SUPERUSER_NAME']
     email = fab_settings['SUPERUSER_MAIL']
-    local('rm db.sqlite3')
+    local('rm -f db.sqlite3')
     local('./manage.py migrate')
     print('\n\n\nenter admin password:\n\n\n')
     local(f'./manage.py createsuperuser --username {username} --email {email}')
