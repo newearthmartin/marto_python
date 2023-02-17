@@ -4,7 +4,10 @@ from fabfile_settings import fab_settings
 
 
 def get_app_ssh_path():
-    return f"{fab_settings['PROD_SERVER']}:{fab_settings['APP_DIR']}/{fab_settings['APP_DJANGO_DIR']}"
+    server = fab_settings['PROD_SERVER']
+    app_dir = fab_settings['APP_DIR']
+    app_django_dir = fab_settings['APP_DJANGO_DIR']
+    return f'{server}:{app_dir}/{app_django_dir}'
 
 
 ################ ENVIRONMENT ################
@@ -36,11 +39,11 @@ def push():
     """
     require('hosts')
     require('venv_app')
-    # local("git submodule foreach git push")
-    local("git push origin master")
+    # local('git submodule foreach git push')
+    local('git push origin master')
     with prefix(env.venv_app):
-        run("git pull")
-        run("git submodule update --init --recursive")
+        run('git pull')
+        run('git submodule update --init --recursive')
 
 
 ################ DEPLOY ################
@@ -54,8 +57,8 @@ def pip():
     require('hosts')
     require('venv_app')
     with prefix(env.venv_app):
-        run("pip install --upgrade pip")
-        run("pip install -r requirements.txt")
+        run('pip install --upgrade pip')
+        run('pip install -r requirements.txt')
 
 
 @task
@@ -66,7 +69,7 @@ def collectstatic():
     require('hosts')
     require('venv_app')
     with prefix(env.venv_app):
-        run("python manage.py collectstatic --noinput")
+        run('python manage.py collectstatic --noinput')
 
 
 @task
@@ -90,7 +93,8 @@ def requirements():
     require('hosts')
     require('venv_app')
     with prefix(env.venv_app):
-        run("pip install -r requirements.txt")
+        run('pip install --upgrade pip')
+        run('pip install -r requirements.txt')
 
 
 @task
@@ -101,7 +105,7 @@ def upgrade_pip():
     require('hosts')
     require('venv_app')
     with prefix(env.venv_app):
-        run("pip install --upgrade pip")
+        run('pip install --upgrade pip')
 
 
 @task
@@ -154,9 +158,11 @@ def db_dump():
     """
     require('hosts')
     require('venv_app')
+    dump_data_models = fab_settings['DUMP_DATA_MODELS']
+
     with prefix(env.venv_app):
         run('mkdir -p data')
-        run(f'./manage.py dumpdata {fab_settings["DUMP_DATA_MODELS"]} --indent=4 > data/db.json')
+        run(f'./manage.py dumpdata {dump_data_models} --indent=4 > data/db.json')
         run('tar cvfz data/db.tgz data/db.json')
         run('rm data/db.json')
     local('mkdir -p data')
@@ -184,7 +190,8 @@ def initial_dump():
     """
     require('hosts')
     require('venv_app')
-    dump_initial_models = fab_settings["DUMP_INITIAL"]
+    dump_initial_models = fab_settings['DUMP_INITIAL']
+
     with prefix(env.venv_app):
         run(f'./manage.py dumpdata {dump_initial_models} --indent=4 > data/initial.json')
     local(f'scp {get_app_ssh_path()}/data/initial.json data')
@@ -222,7 +229,7 @@ def hourly():
     """
     require('venv_app')
     with prefix(env.venv_app):
-        run("python manage.py runjobs hourly")
+        run('python manage.py runjobs hourly')
 
 
 @task
@@ -232,7 +239,7 @@ def daily():
     """
     require('venv_app')
     with prefix(env.venv_app):
-        run("python manage.py runjobs daily")
+        run('python manage.py runjobs daily')
 
 
 ################ CELERY ################
@@ -252,5 +259,5 @@ def celery():
 def monit():
     require('hosts')
     require('venv_app')
-    run("monit")
-    run("monit status")
+    run('monit')
+    run('monit status')
