@@ -7,9 +7,10 @@ def foreign_field(field_name):
         val = obj
         for part in field_name.split('__'):
             val = getattr(val, part)
+            if val is None:
+                return None
         return val if not is_function(val) else val()
     accessor.__name__ = field_name
-
     return accessor
 
 
@@ -27,7 +28,6 @@ class YesNoFilter(SimpleListFilter):
 
     def queryset_yes_no(self, request, queryset, is_yes):
         raise NotImplementedError
-
 
 
 ff = foreign_field
