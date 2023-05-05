@@ -15,8 +15,8 @@ def read_secrets(base_dir=None, secrets_file=None):
             secrets = toml.loads(secrets_file.read())
 
 
-def get_secret(key):
+def get_secret(key, default=None):
     if secrets and key in secrets:
         return secrets[key]
     else:
-        return os.environ.get(key)
+        return os.environ.get(key, default=default)
