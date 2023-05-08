@@ -49,3 +49,8 @@ def read_static_file(path):
     path = finders.find(path)
     with open(path) as f:
         return f.read()
+
+
+def get_extension(filename):
+    ext = filename.rsplit('.', maxsplit=1)
+    return ext[1].lower() if len(ext) == 2 else None
