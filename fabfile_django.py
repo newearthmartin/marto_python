@@ -203,6 +203,8 @@ def initial_load():
     load initial data on local computer
     """
     local('./manage.py loaddata data/initial.json')
+    if os.path.exists('data/initial_local.json'):
+        local('./manage.py loaddata data/initial_local.json')
 
 
 @task
