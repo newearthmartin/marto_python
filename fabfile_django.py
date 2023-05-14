@@ -162,7 +162,7 @@ def db_dump():
 
     with prefix(env.venv_app):
         run('mkdir -p data')
-        run(f'./manage.py dumpdata {dump_data_models} --indent=4 > data/db.json')
+        run(f'./manage.py dumpdata {dump_data_models} --indent=2 > data/db.json')
         run('tar cvfz data/db.tgz data/db.json')
         run('rm data/db.json')
     local('mkdir -p data')
@@ -193,7 +193,7 @@ def initial_dump():
     dump_initial_models = fab_settings['DUMP_INITIAL']
 
     with prefix(env.venv_app):
-        run(f'./manage.py dumpdata {dump_initial_models} --indent=4 > data/initial.json')
+        run(f'./manage.py dumpdata {dump_initial_models} --indent=2 > data/initial.json')
     local(f'scp {get_app_ssh_path()}/data/initial.json data')
 
 
