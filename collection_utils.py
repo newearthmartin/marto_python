@@ -17,17 +17,6 @@ def add_list_elem(dct, key, elem):
         dct[key] = [elem]
 
 
-def to_dict(lst: list, map_func: Callable) -> dict:
-    dct = {}
-    for elem in lst:
-        kv = map_func(elem)
-        if kv:
-            k = kv[0]
-            v = kv[1]
-            if k is not None: dct[k] = v
-    return dct
-
-
 def map_dict(dct: dict, map_fn: Callable) -> dict:
     return {k: map_fn(k, v) for k, v in dct.items()}
 
