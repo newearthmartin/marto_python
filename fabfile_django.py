@@ -19,7 +19,9 @@ def prod():
     env.hosts = [fab_settings['PROD_SERVER']]
     env.webapp_dir = fab_settings['APP_DIR']
     env.restart_script = fab_settings['RESTART_SCRIPT']
-    env.venv_app = fab_settings['VENV_SCRIPT']
+    env.venv_app = fab_settings.get('VENV_SCRIPT', f'cd {env.webapp_dir}')
+    env.main_branch = fab_settings.get('MAIN_BRANCH', 'master')
+    env.port = fab_settings.get('SSH_PORT', 22)
 
 
 ################ GIT ################
@@ -40,11 +42,10 @@ def push():
     require('hosts')
     require('venv_app')
     # local('git submodule foreach git push')
-    local('git push origin master')
+    local(f'git push origin {env.main_branch}')
     with prefix(env.venv_app):
         run('git pull')
         run('git submodule update --init --recursive')
-
 
 ################ DEPLOY ################
 
