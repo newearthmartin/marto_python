@@ -81,8 +81,7 @@ def migrate():
     require('hosts')
     require('venv_app')
     with prefix(env.venv_app):
-        migrate_apps = fab_settings['MIGRATE_APPS']
-        if not migrate_apps: migrate_apps = ''
+        migrate_apps = fab_settings.get('MIGRATE_APPS', '')
         run(f'python manage.py migrate {migrate_apps}')
 
 
