@@ -119,11 +119,10 @@ def load_class(full_class_string):
 
 def setting(property_name, default=None):
     try:
-        val = getattr(settings, property_name)
-    except:
-        logger.debug(f'{property_name} not found in settings module')
-        val = default
-    return val
+        return getattr(settings, property_name)
+    except AttributeError:
+        logger.warning(f'Setting {property_name} not found')
+        return default
 
 
 # TODO: parametrizar en settings

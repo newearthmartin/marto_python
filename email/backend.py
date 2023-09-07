@@ -70,14 +70,14 @@ class DBEmailBackend(DecoratorBackend):
         dump = json.dumps(message.__dict__)
         message.connection = connection
         email = EmailMessage()
-        email.from_email =  message.from_email
-        email.subject =     message.subject
-        email.body =        message.body
-        email.to =          list2comma_separated(message.to)
-        email.cc =          list2comma_separated(message.cc)
-        email.bcc =         list2comma_separated(message.bcc)
+        email.from_email = message.from_email
+        email.subject = message.subject
+        email.body = message.body
+        email.to = list2comma_separated(message.to)
+        email.cc = list2comma_separated(message.cc)
+        email.bcc = list2comma_separated(message.bcc)
         email.email_class = get_full_class(message)
-        email.email_dump =  dump
+        email.email_dump = dump
         return email
 
     @staticmethod
