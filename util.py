@@ -121,7 +121,7 @@ def setting(property_name, default=None):
     try:
         return getattr(settings, property_name)
     except AttributeError:
-        logger.warning(f'Setting {property_name} not found')
+        logger.debug(f'Setting {property_name} not found')
         return default
 
 

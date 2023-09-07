@@ -49,19 +49,21 @@ class DecoratorBackend(BaseEmailBackend):
 class StackedEmailBackend(DecoratorBackend):
     def __init__(self, *args, **kwargs):
         inner_backend = None
-        for backend_class in settings.EMAIL_BACKEND_STACK:
-            inner_backend = load_class(backend_class)(*args, inner_backend=inner_backend, **kwargs)
+        for backend_class_name in settings.EMAIL_BACKEND_STACK:
+            backend_class = load_class(backend_class_name)
+            inner_backend = backend_class(*args, inner_backend=inner_backend, **kwargs)
         super().__init__(*args, inner_backend=inner_backend, **kwargs)
 
 
 class DBEmailBackend(DecoratorBackend):
+    instance = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        DBEmailBackend.instance = self
         if not self.inner_backend:
-            class_name = setting('EMAIL_DB_INNER_BACKEND',
-                                 default='django.core.mail.backends.smtp.EmailBackend')
-            if class_name:
-                self.set_inner_backend_class(class_name)
+            class_name = setting('EMAIL_DB_INNER_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+            self.set_inner_backend_class(class_name)
 
     @staticmethod
     def django_message_to_db_email(message):
