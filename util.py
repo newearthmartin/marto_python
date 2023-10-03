@@ -1,6 +1,8 @@
 import logging
 import math
 import datetime
+from datetime import timedelta, date, datetime
+from typing import Type, Union
 import importlib
 
 from types import BuiltinFunctionType, BuiltinMethodType,  FunctionType, MethodType, LambdaType
@@ -9,6 +11,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
+from django.http import HttpRequest
 from .collection_utils import add_list_elem
 
 
@@ -23,44 +26,44 @@ class ErrorCode:
     message = None
 
 
-def add_message(request, message):
+def add_message(request: HttpRequest, message):
     add_list_elem(request.session, 'messages', message)
 
 
 def as_datetime(ts):
     if ts < 0: return None
-    return datetime.datetime.utcfromtimestamp(float(ts)).astimezone()
+    return datetime.utcfromtimestamp(float(ts)).astimezone()
 
 
-def as_timestamp(dt):
+def as_timestamp(dt: datetime):
     return int(dt.timestamp())
 
 
-def custom_range(l, range_first=None, range_last=None):
+def custom_range(lst: list, range_first=None, range_last=None):
     if range_first is not None:
         range_first = int(range_first)
     if range_last is not None:
         range_last = int(range_last)
     if range_first is not None:
         if range_last is not None:
-            return l[range_first:range_last]
+            return lst[range_first:range_last]
         else:
-            return l[range_first:]
+            return lst[range_first:]
     elif range_last is not None:
-        return l[:range_last]
+        return lst[:range_last]
     else:
-        return l
+        return lst
 
 
-def daterange(start_date, end_date):
+def daterange(start_date: Union[date, datetime], end_date: Union[date, datetime]):
     delta = int((end_date - start_date).days)
     for n in range(0, delta):
-        yield start_date + datetime.timedelta(n)
+        yield start_date + timedelta(n)
 
 
-def days_difference(date_past, date_future):
+def days_difference(date_past: Union[date, datetime], date_future: Union[date, datetime]):
     difference = date_future - date_past
-    return difference.total_seconds() / datetime.timedelta(days=1).total_seconds()
+    return difference.total_seconds() / timedelta(days=1).total_seconds()
 
 
 def get_pk(obj):
@@ -76,7 +79,7 @@ def staff():
     return User.objects.filter(is_staff=1)
 
 
-def staff_emails():
+def staff_emails() -> [str]:
     emails = []
     for user in staff():
         if user.email:
@@ -84,7 +87,7 @@ def staff_emails():
     return emails
 
 
-def is_valid_email(email):
+def is_valid_email(email: str) -> bool:
     try:
         validate_email(email)
         return True
@@ -92,11 +95,11 @@ def is_valid_email(email):
         return False
 
 
-def is_function(obj):
+def is_function(obj) -> bool:
     return isinstance(obj, (BuiltinFunctionType, BuiltinMethodType,  FunctionType, MethodType, LambdaType, partial))
 
 
-def get_full_class(obj):
+def get_full_class(obj) -> str:
     """
     return the fully qualified class name for the object
     """
@@ -104,11 +107,11 @@ def get_full_class(obj):
     return ((module + '.') if module else '') + obj.__class__.__name__
 
 
-def load_class(full_class_string):
+def load_class(full_classname: str) -> Type:
     """
     dynamically load a class from a string
     """
-    class_data = full_class_string.split(".")
+    class_data = full_classname.split(".")
     module_path = ".".join(class_data[:-1])
     class_str = class_data[-1]
 
@@ -117,7 +120,7 @@ def load_class(full_class_string):
     return getattr(module, class_str)
 
 
-def setting(property_name, default=None):
+def setting(property_name: str, default=None):
     try:
         return getattr(settings, property_name)
     except AttributeError:
