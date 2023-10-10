@@ -1,5 +1,6 @@
 import random
 from django.db import models
+from django.db.models import Q
 from django.utils.crypto import get_random_string
 from marto_python.email.email import send_email
 

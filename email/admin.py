@@ -4,6 +4,8 @@ from django.contrib.admin.options import ModelAdmin
 from django.contrib.admin.widgets import AdminTextInputWidget
 from tinymce.widgets import TinyMCE
 
+from marto_python.admin import YesNoFilter
+from .management.commands.clean_error_emails import filter_error_emails
 from .models import EmailMessage
 from .backend import DBEmailBackend
 
@@ -22,10 +24,18 @@ class EmailMessageAdminForm(forms.ModelForm):
         }
 
 
+class ErrorsFilter(YesNoFilter):
+    title = 'is error'
+    parameter_name = 'is_error'
+
+    def queryset_yes_no(self, request, queryset, is_yes):
+        return filter_error_emails(queryset, filter_not_exclude=is_yes)
+
+
 class EmailMessageAdmin(ModelAdmin):
     form = EmailMessageAdminForm
     list_display = ['to', 'subject', 'sent', 'send_successful', 'fail_message', 'created_on', 'sent_on']
-    list_filter = ['sent', 'send_successful', 'created_on', 'sent_on']
+    list_filter = ['sent', 'send_successful', ErrorsFilter, 'created_on', 'sent_on']
     search_fields = ['from_email', 'to', 'cc', 'bcc', 'subject', 'body', 'fail_message']
     actions = ['send']
 

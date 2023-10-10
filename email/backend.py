@@ -5,6 +5,7 @@ import logging
 from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused
 
 from django.conf import settings
+from django.db.models import QuerySet
 from django.utils import timezone
 from django.core.mail.backends.base import BaseEmailBackend
 
@@ -20,7 +21,7 @@ class DecoratorBackend(BaseEmailBackend):
     inner_backend = None
 
     def __init__(self, *args, **kwargs):
-        super(DecoratorBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         backend_instance = kwargs.get('inner_backend')
         backend_class = kwargs.get('inner_backend_class')
         if backend_instance: self.set_inner_backend(backend_instance)
@@ -48,19 +49,21 @@ class DecoratorBackend(BaseEmailBackend):
 class StackedEmailBackend(DecoratorBackend):
     def __init__(self, *args, **kwargs):
         inner_backend = None
-        for backend_class in settings.EMAIL_BACKEND_STACK:
-            inner_backend = load_class(backend_class)(*args, inner_backend=inner_backend, **kwargs)
-        super(StackedEmailBackend, self).__init__(*args, inner_backend=inner_backend, **kwargs)
+        for backend_class_name in settings.EMAIL_BACKEND_STACK:
+            backend_class = load_class(backend_class_name)
+            inner_backend = backend_class(*args, inner_backend=inner_backend, **kwargs)
+        super().__init__(*args, inner_backend=inner_backend, **kwargs)
 
 
 class DBEmailBackend(DecoratorBackend):
+    instance = None
+
     def __init__(self, *args, **kwargs):
-        super(DBEmailBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
+        DBEmailBackend.instance = self
         if not self.inner_backend:
-            class_name = setting('EMAIL_DB_INNER_BACKEND',
-                                 default='django.core.mail.backends.smtp.EmailBackend')
-            if class_name:
-                self.set_inner_backend_class(class_name)
+            class_name = setting('EMAIL_DB_INNER_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+            self.set_inner_backend_class(class_name)
 
     @staticmethod
     def django_message_to_db_email(message):
@@ -69,14 +72,14 @@ class DBEmailBackend(DecoratorBackend):
         dump = json.dumps(message.__dict__)
         message.connection = connection
         email = EmailMessage()
-        email.from_email =  message.from_email
-        email.subject =     message.subject
-        email.body =        message.body
-        email.to =          list2comma_separated(message.to)
-        email.cc =          list2comma_separated(message.cc)
-        email.bcc =         list2comma_separated(message.bcc)
+        email.from_email = message.from_email
+        email.subject = message.subject
+        email.body = message.body
+        email.to = list2comma_separated(message.to)
+        email.cc = list2comma_separated(message.cc)
+        email.bcc = list2comma_separated(message.bcc)
         email.email_class = get_full_class(message)
-        email.email_dump =  dump
+        email.email_dump = dump
         return email
 
     @staticmethod
@@ -98,7 +101,7 @@ class DBEmailBackend(DecoratorBackend):
     def send_all(self):
         self.send_queryset(EmailMessage.objects)
 
-    def send_queryset(self, emails_queryset):
+    def send_queryset(self, emails_queryset: QuerySet):
         """
         sends all emails in the queryset that haven't been sent
         """
@@ -157,7 +160,7 @@ class DBEmailBackend(DecoratorBackend):
             email.sent = False
             email.send_successful = False
             try:
-                super(DBEmailBackend, self).send_messages([email_message])
+                super().send_messages([email_message])
                 email.send_successful = True
                 email.sent = True
             except SMTPRecipientsRefused as e:
@@ -191,7 +194,7 @@ class FilteringEmailBackend(DecoratorBackend):
     def __init__(self, *args, **kwargs):
         class_name = setting('EMAIL_FILTERING_INNER_BACKEND',
                              default='django.core.mail.backends.smtp.EmailBackend')
-        super(FilteringEmailBackend, self).__init__(*args, inner_backend_class=class_name, **kwargs)
+        super().__init__(*args, inner_backend_class=class_name, **kwargs)
         self.pass_emails = setting('EMAIL_FILTERING_PASS_EMAILS', default=[])
         self.redirect_to = setting('EMAIL_FILTERING_REDIRECT_TO', default=[])
 
@@ -221,4 +224,4 @@ class FilteringEmailBackend(DecoratorBackend):
                     status += ' - not redirecting'
             logger.info(status)
             if send:
-                super(FilteringEmailBackend, self).send_messages(email_messages)
+                super().send_messages(email_messages)
