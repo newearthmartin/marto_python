@@ -111,12 +111,11 @@ def upgrade_pip():
 @task
 def restart():
     """
-    Restart apache on the server.
+    Restart app on the server.
     """
     require('hosts')
     require('restart_script')
-    with cd(env.webapp_dir):
-        run(env.restart_script)
+    run(env.restart_script)
 
 
 @task
