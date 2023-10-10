@@ -1,5 +1,6 @@
 import pdfkit
 from django.conf import settings
+from django.http import HttpResponse
 
 
 def render_to_pdf(html, pdf_out_file, wkhtmltopdf_options=None):
@@ -19,3 +20,9 @@ def render_to_pdf(html, pdf_out_file, wkhtmltopdf_options=None):
         configuration=pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path) if wkhtmltopdf_path else None,
         options=options
     )
+
+
+def pdf_response(pdf_filename, contents):
+    response = HttpResponse(contents, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename={pdf_filename}'
+    return response

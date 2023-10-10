@@ -1,5 +1,6 @@
 import json
 import logging
+from math import ceil
 from json import JSONEncoder
 from decimal import Decimal
 from typing import Any, Callable, Optional, Iterable
@@ -16,17 +17,6 @@ def add_list_elem(dct, key, elem):
         dct[key] = [elem]
 
 
-def to_dict(lst: list, map_func: Callable) -> dict:
-    dct = {}
-    for elem in lst:
-        kv = map_func(elem)
-        if kv:
-            k = kv[0]
-            v = kv[1]
-            if k is not None: dct[k] = v
-    return dct
-
-
 def map_dict(dct: dict, map_fn: Callable) -> dict:
     return {k: map_fn(k, v) for k, v in dct.items()}
 
@@ -38,6 +28,15 @@ def to_list(dct: dict, sort_by_key: bool = False, sorting_key_fn: Optional[Calla
     elif sorting_key_fn:
         lst.sort(key=sorting_key_fn)
     return lst
+
+
+def split_chunks(lst: list, chunk_size: int) -> list[list]:
+    chunks = []
+    i = 0
+    while i < len(lst):
+        chunks.append(lst[i: i + chunk_size])
+        i += chunk_size
+    return chunks
 
 
 def filter_map(dct: dict, predicate: Predicate) -> dict:
@@ -97,6 +96,10 @@ def first(predicate: Predicate, iterable: Iterable) -> Optional[Any]:
     for item in iterable:
         if predicate(item): return item
     return None
+
+
+def exists(predicate: Predicate, iterable: Iterable) -> bool:
+    return first(predicate, iterable) is not None
 
 
 class DictJsonEncoder(JSONEncoder):
