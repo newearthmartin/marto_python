@@ -1,0 +1,7 @@
+#!/bin/bash
+git fetch --all --tags --quiet
+LATEST_COMMIT_TAG=`git rev-list --tags --max-count=1`
+LATEST_TAG=`git describe --tags $LATEST_COMMIT_TAG`
+echo Checking out latest tag: $LATEST_TAG
+git checkout --quiet $LATEST_TAG
+git submodule update --recursive
