@@ -17,3 +17,9 @@ def log_exceptions(lggr=None, reraise=True):
                     raise
         return exception_logging_wrapper
     return logging_decorator
+
+
+def error_view(message='Purposefully generated error for testing purposes'):
+    def view_fn(request):
+        raise(Exception(message))
+    return view_fn
