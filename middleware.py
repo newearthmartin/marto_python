@@ -1,5 +1,6 @@
 from django.utils.deprecation import MiddlewareMixin
 from django.shortcuts import render
+from django.http import HttpResponse
 
 
 class ViewShortcutMiddleware(MiddlewareMixin):
@@ -23,6 +24,11 @@ class TemplateMiddleware(MiddlewareMixin):
         return render(request, self.template, {}, status=self.status_code)
 
 
-class MaintenanceMiddleware(TemplateMiddleware):
-    def __init__(self, get_response):
-        super().__init__(get_response, 'maintenance.html', status_code=503)
+class MaintenanceMiddleware(MiddlewareMixin):
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        msg = '<html><body>This site is under maintenance. Please come back later.</body></html>'
+        return HttpResponse(msg, status=503)
+
+# class MaintenanceMiddleware(TemplateMiddleware):
+#     def __init__(self, get_response):
+#         super().__init__(get_response, 'maintenance.html', status_code=503)
