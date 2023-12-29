@@ -54,7 +54,7 @@ def remove_zw(string: str) -> str:
 
 
 def cut_str(string: str, length: int) -> str:
-    if len(string) <= length:
+    if not string or len(string) <= length:
         return string
     return string[:length - 3] + '...'
 
