@@ -9,7 +9,7 @@ from django.db.models import QuerySet
 from django.utils import timezone
 from django.core.mail.backends.base import BaseEmailBackend
 
-from marto_python.email.models import EmailMessage
+from marto_python.email.models import EmailMessage, BlockedAddress
 from marto_python.util import get_full_class, load_class, setting
 from marto_python.collection_utils import list2comma_separated
 
@@ -83,13 +83,32 @@ class DBEmailBackend(DecoratorBackend):
         return email
 
     @staticmethod
+    def remove_blocked_addresses(email):
+        removed = set(json.loads(email.blocked_addresses)) if email.blocked_addresses else set()
+
+        def filter_blocked(addresses):
+            rv = []
+            for a in addresses:
+                if BlockedAddress.objects.filter(email=a).exists():
+                    removed.add(a)
+                else:
+                    rv.append(a)
+            return rv
+        email.to = filter_blocked(email.to)
+        email.cc = filter_blocked(email.cc)
+        email.bcc = filter_blocked(email.bcc)
+        email.blocked_addresses = json.dumps(list(removed)) if removed else None
+        return email.to or email.cc or email.bcc
+
+    @staticmethod
     def db_email_to_django_message(email):
         message = load_class(email.email_class)()
         message.__dict__ = json.loads(email.email_dump)
         return message
 
     def send_messages(self, email_messages):
-        db_emails = list(map(DBEmailBackend.django_message_to_db_email, email_messages))
+        db_emails = (DBEmailBackend.django_message_to_db_email(e) for e in email_messages)
+
         for email in db_emails:
             email.save()
         if setting('EMAIL_DB_SEND_IMMEDIATELY', True):
@@ -147,12 +166,12 @@ class DBEmailBackend(DecoratorBackend):
     def do_send(self, emails):
         logger.info(f'sending {len(emails)} emails')
         for email in emails:
-            # using log_fn to prevent infinite loop while sending errors to admins
+            # Using log_fn to prevent infinite loop while sending errors to admins
             # because logger.error creates a new email
             has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
             log_fn = logger.error if not has_admin_emails else logger.warning
 
-            # check again if its not sent, for concurrency
+            # Check again if it's not sent, for concurrency
             if email.sent:
                 logger.debug(f'email already sent {email.to} - {email.subject}')
                 continue

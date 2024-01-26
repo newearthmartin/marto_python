@@ -21,6 +21,7 @@ class EmailMessage(models.Model):
     fail_message = models.CharField(max_length=1024, null=True, blank=True)
     email_class = models.CharField(max_length=256)
     email_dump = models.TextField()
+    blocked_addresses = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.subject
@@ -80,3 +81,7 @@ class EmailConfirmationMixin(models.Model):
         context['user'] = user
         context['email_confirmation'] = self
         send_email(user.email, subject, template, context)
+
+
+class BlockedAddress(models.Model):
+    email = models.EmailField(unique=True)

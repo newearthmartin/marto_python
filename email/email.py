@@ -18,8 +18,8 @@ def is_email(email_str):
         return False
 
 
-def send(to, subject, email_html, sender=settings.DEFAULT_FROM_EMAIL):
-    email = EmailMessage(subject, email_html, sender, to)
+def send(to, subject, email_html, sender=settings.DEFAULT_FROM_EMAIL, cc=None, bcc=None):
+    email = EmailMessage(subject, email_html, sender, to, cc=cc, bcc=bcc)
     email.content_subtype = "html"  # Main content is now text/html
     email.send(fail_silently=False)
 
