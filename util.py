@@ -1,8 +1,8 @@
 import logging
 import math
 import datetime
-from datetime import timedelta, date, datetime
 from typing import Type, Union
+from datetime import timedelta, date, datetime
 import importlib
 
 from types import BuiltinFunctionType, BuiltinMethodType,  FunctionType, MethodType, LambdaType
