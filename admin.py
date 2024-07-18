@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter, ModelAdmin
-from django.db.models import Model
+from django.db.models import Model, QuerySet
 from .util import is_function
 
 
@@ -26,12 +26,12 @@ class YesNoFilter(SimpleListFilter):
             ('0', 'no'),
         ]
 
-    def queryset(self, request, queryset):
+    def queryset(self, request, queryset) -> QuerySet:
         if self.value():
             queryset = self.queryset_yes_no(request, queryset, self.value() == '1')
         return queryset
 
-    def queryset_yes_no(self, request, queryset, is_yes):
+    def queryset_yes_no(self, request, queryset, is_yes) -> QuerySet:
         raise NotImplementedError
 
 
