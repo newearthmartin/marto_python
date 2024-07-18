@@ -64,7 +64,7 @@ def list2comma_separated(lst: list) -> str:
     return ','.join(lst)
 
 
-def dict_encode(obj, encoder=None):
+def dict_encode(obj, encoder: Callable = None):
     """
     useful for serializing objects to JSON
     use: json.dumps(dict_encode(obj, encoder=some_encoder_func))
