@@ -1,6 +1,5 @@
 import json
 import logging
-from math import ceil
 from json import JSONEncoder
 from decimal import Decimal
 from typing import Any, Callable, Optional, Iterable
@@ -71,7 +70,7 @@ def dict_encode(obj, encoder: Callable = None):
     """
     if obj is None:
         return None
-    if isinstance(obj, str):
+    if isinstance(obj, (str, int, float, bool)):
         return obj
     if isinstance(obj, dict):
         rv = {}
