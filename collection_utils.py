@@ -66,30 +66,25 @@ def list2comma_separated(lst: list) -> str:
 
 def dict_encode(obj, encoder: Callable = None):
     """
-    useful for serializing objects to JSON
-    use: json.dumps(dict_encode(obj, encoder=some_encoder_func))
+    Useful for serializing objects to JSON
+    Use: json.dumps(dict_encode(obj, encoder=some_encoder_func))
     """
     if obj is None:
         return None
-    elif isinstance(obj, str):
+    if isinstance(obj, str):
         return obj
-    elif type(obj) == dict:
+    if isinstance(obj, dict):
         rv = {}
         for k, v in obj.items():
             rv[k] = dict_encode(v, encoder)
         return rv
-    elif hasattr(obj, '__iter__'):
-        rv = []
-        for elem in obj:
-            rv.append(dict_encode(elem, encoder))
-        return rv
-    elif not hasattr(obj, '__dict__'):
+    if hasattr(obj, '__iter__'):
+        return [dict_encode(e, encoder) for e in obj]
+    if not hasattr(obj, '__dict__'):
         return obj
-    else:
-        # is object
-        if not encoder:
-            raise Exception(f"Can't encode object of type {type(obj)} without an encoder")
-        return dict_encode(encoder(obj), encoder)
+    if not encoder:
+        raise Exception(f"Can't encode object of type {type(obj)} without an encoder")
+    return dict_encode(encoder(obj), encoder)
 
 
 def first(predicate: Predicate, iterable: Iterable) -> Optional[Any]:
