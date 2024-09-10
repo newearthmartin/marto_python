@@ -26,6 +26,11 @@ def upload_pic(uploaded_file, to_file):
     destination.close()
 
 
+def read_all(path):
+    with open(path) as f:
+        return f.read()
+
+
 def read_lines(f, remove_empty=False):
     lines = f.read().splitlines()
     lines = [line.strip() for line in lines]
