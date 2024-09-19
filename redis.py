@@ -1,6 +1,6 @@
 from redis import Redis
 from django.conf import settings
-from redlock.lock import RedLock, RedLockFactory
+from redlock.lock import RedLockFactory
 
 
 def get_redis():
