@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 from functools import reduce
 from typing import Any, Optional
@@ -75,3 +76,11 @@ def human_list_str(strings: list[str], comma_str=', ', and_str=' and '):
         return strings[0]
     pre_and = strings[:-1]
     return comma_str.join(pre_and) + and_str + strings[-1]
+
+
+def unescape_html_entities(s):
+    matches = re.findall(r'&#\d+;', s)
+    for match in matches:
+        char = chr(int(match[2:-1]))
+        s = s.replace(match, char)
+    return s
