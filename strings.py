@@ -79,8 +79,11 @@ def human_list_str(strings: list[str], comma_str=', ', and_str=' and '):
 
 
 def unescape_html_entities(s):
-    matches = re.findall(r'&#\d+;', s)
-    for match in matches:
-        char = chr(int(match[2:-1]))
+    matches = re.finditer(r'&#([xX]?[0-9a-fA-F]+);', s)
+    for m in matches:
+        match = m[0]
+        code = m[1].lower()
+        code = int(code[1:], 16) if code.startswith('x') else int(code)
+        char = chr(code)
         s = s.replace(match, char)
     return s
