@@ -38,8 +38,7 @@ class YesNoFilter(SimpleListFilter):
 
 # noinspection PyMethodMayBeStatic
 class CachedFieldListFilter(SimpleListFilter):
-    def __init__(self, request, params, model, model_admin, field_name, ttl=24 * 60 * 60):
-        self.field_name = field_name
+    def __init__(self, request, params, model, model_admin, ttl=24 * 60 * 60):
         self.model = model
         self.ttl = ttl
         self.null_key, self.null_value = self.null_key_value()
@@ -49,7 +48,7 @@ class CachedFieldListFilter(SimpleListFilter):
         cache = caches['default']
         cache_key = f'filter.{self.model}.{self.field_name}'
         values = cache.get(cache_key)
-        if values is None or True:
+        if values is None:
             values = self.model.objects.values_list(self.field_name).distinct().order_by(self.field_name).all()
             values = [v[0] for v in values]
             has_none = None in values
