@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter, ModelAdmin
+from django.core.cache import caches
 from django.db.models import Model, QuerySet
 from .util import is_function
 
@@ -33,6 +34,42 @@ class YesNoFilter(SimpleListFilter):
 
     def queryset_yes_no(self, request, queryset, is_yes) -> QuerySet:
         raise NotImplementedError
+
+
+# noinspection PyMethodMayBeStatic
+class CachedFieldListFilter(SimpleListFilter):
+    def __init__(self, request, params, model, model_admin, field_name, ttl=24 * 60 * 60):
+        self.field_name = field_name
+        self.model = model
+        self.ttl = ttl
+        self.null_key, self.null_value = self.null_key_value()
+        super().__init__(request, params, model, model_admin)
+
+    def lookups(self, request, model_admin):
+        cache = caches['default']
+        cache_key = f'filter.{self.model}.{self.field_name}'
+        values = cache.get(cache_key)
+        if values is None or True:
+            values = self.model.objects.values_list(self.field_name).distinct().order_by(self.field_name).all()
+            values = [v[0] for v in values]
+            has_none = None in values
+            values = [(self.value_to_key(v), str(v)) for v in values if v is not None]
+            if has_none:
+                values.append((self.null_key, self.null_value))
+            cache.set(cache_key, values, self.ttl)
+        return values
+
+    def null_key_value(self): return 'null', '-'
+    def value_to_key(self, v): return str(v)
+    def key_to_filter_value(self, v): return v
+
+    def queryset(self, request, queryset):
+        if self.value():
+            field_value = self.key_to_filter_value(self.value()) if self.value() != self.null_key else None
+            params = {self.field_name: field_value}
+            queryset = queryset.filter(**params)
+        return queryset
+
 
 
 def register_admin(clazz: type[Model], admin_class: type[ModelAdmin] = None):
