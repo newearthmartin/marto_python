@@ -1,4 +1,5 @@
 import logging
+import atexit
 from django.conf import Settings
 from playwright.sync_api import sync_playwright
 from playwright._impl._errors import TargetClosedError
@@ -12,6 +13,7 @@ __browser = None
 def __get_playwright():
     global __playwright
     if not __playwright:
+        atexit.register(__close)
         __playwright = sync_playwright().start()
     return __playwright
 
@@ -25,6 +27,10 @@ def __get_browser():
         executable_path = getattr(Settings, 'CHROMIUM_PATH', None)
         __browser = __get_playwright().chromium.launch(headless=True, executable_path=executable_path)
     return __browser
+
+
+def __close():
+    if __browser: __browser.close()
 
 
 def __get_browser_page(page_url, wait_load=True):
