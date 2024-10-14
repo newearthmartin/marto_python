@@ -48,6 +48,7 @@ async def __get_browser():
 
 
 async def __get_browser_page(page_url, wait_load=True):
+    logger.info(f'Getting {page_url} with browser')
     browser = await get_browser()
     page = await browser.new_page()
     await page.goto(page_url)
