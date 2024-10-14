@@ -54,10 +54,12 @@ def remove_zw(string: str) -> str:
                  .replace('\u200C', '')
 
 
-def cut_str(string: str, length: int) -> str:
+def cut_str(string: str, length: int, full=False) -> str:
     if not string or len(string) <= length:
         return string
-    return string[:length - 3] + '...'
+    rv = string[:length - 3] + '...'
+    if full: rv = rv.replace('\n', '').strip()
+    return rv
 
 
 def str_if(val: Optional[Any], default_value: Optional[str] = None) -> Optional[str]:
