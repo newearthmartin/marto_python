@@ -59,7 +59,7 @@ def cut_str(s: str, length: int, full=False) -> str:
     if len(s) > length:
         s = s[:length - 3] + '...'
     if full:
-        s = re.sub(r'(\s+)', ' ', s).strip()
+        s = s.replace('\n', '').strip()
     return s
 
 
