@@ -46,7 +46,7 @@ class CachedFieldListFilter(SimpleListFilter):
 
     def lookups(self, request, model_admin):
         cache = caches['default']
-        cache_key = f'filter.{self.model}.{self.field_name}'
+        cache_key = f'field_list_filter.{self.model.__module__}.{self.model.__name__}.{self.field_name}'
         values = cache.get(cache_key)
         if values is None:
             values = self.model.objects.values_list(self.field_name).distinct().order_by(self.field_name).all()
