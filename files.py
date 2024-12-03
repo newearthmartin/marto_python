@@ -1,4 +1,6 @@
 import os
+import json
+import pickle
 from random import randint
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
@@ -24,6 +26,11 @@ def upload_pic(uploaded_file, to_file):
     for chunk in uploaded_file.chunks():
         destination.write(chunk)
     destination.close()
+
+
+def read_all(path):
+    with open(path) as f:
+        return f.read()
 
 
 def read_lines(f, remove_empty=False):
@@ -54,3 +61,23 @@ def read_static_file(path):
 def get_extension(filename):
     ext = filename.rsplit('.', maxsplit=1)
     return ext[1].lower() if len(ext) == 2 else None
+
+
+def quick_write_json(filename, data):
+    with open(filename, 'w') as f:
+        f.write(json.dumps(data))
+
+
+def quick_write_bin(filename, data):
+    with open(filename, 'wb') as f:
+        pickle.dump(data, f)
+
+
+def quick_read_json(filename):
+    with open(filename) as f:
+        return json.loads(f.read())
+
+
+def quick_read_bin(filename):
+    with open(filename, 'rb') as f:
+        return pickle.load(f)

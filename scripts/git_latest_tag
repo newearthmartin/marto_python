@@ -1,7 +1,14 @@
-#!/bin/bash
-git fetch --all --tags --quiet
-LATEST_COMMIT_TAG=`git rev-list --tags --max-count=1`
-LATEST_TAG=`git describe --tags $LATEST_COMMIT_TAG`
-echo Checking out latest tag: $LATEST_TAG
-git checkout --quiet $LATEST_TAG
-git submodule update --recursive
+#!/usr/bin/python3
+import sys
+import subprocess
+
+tags = subprocess.run("git for-each-ref --sort=-creatordate --format '%(objectname) %(refname:strip=2)' refs/tags", shell=True, capture_output=True, text=True)
+tags = tags.stdout.split('\n')
+tags = (tag.split(' ', 1) for tag in tags)
+tags = [tag for tag in tags if len(tag) == 2]
+
+if '--norc' in sys.argv:
+    tags = [tag for tag in tags if 'rc' not in tag[1]]
+
+if tags:
+    print(tags[0][0])

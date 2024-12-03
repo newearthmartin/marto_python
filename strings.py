@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 from functools import reduce
 from typing import Any, Optional
@@ -53,10 +54,13 @@ def remove_zw(string: str) -> str:
                  .replace('\u200C', '')
 
 
-def cut_str(string: str, length: int) -> str:
-    if not string or len(string) <= length:
-        return string
-    return string[:length - 3] + '...'
+def cut_str(s: str, length: int, full=False) -> str:
+    if not s: return s
+    if len(s) > length:
+        s = s[:length - 3] + '...'
+    if full:
+        s = s.replace('\n', '').strip()
+    return s
 
 
 def str_if(val: Optional[Any], default_value: Optional[str] = None) -> Optional[str]:
@@ -75,3 +79,14 @@ def human_list_str(strings: list[str], comma_str=', ', and_str=' and '):
         return strings[0]
     pre_and = strings[:-1]
     return comma_str.join(pre_and) + and_str + strings[-1]
+
+
+def unescape_html_entities(s):
+    matches = re.finditer(r'&#([xX]?[0-9a-fA-F]+);', s)
+    for m in matches:
+        match = m[0]
+        code = m[1].lower()
+        code = int(code[1:], 16) if code.startswith('x') else int(code)
+        char = chr(code)
+        s = s.replace(match, char)
+    return s

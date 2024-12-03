@@ -14,6 +14,7 @@ class ViewShortcutMiddleware(MiddlewareMixin):
         return None
 
 
+# noinspection PyMethodMayBeStatic
 class MaintenanceMiddleware(MiddlewareMixin):
     def process_view(self, request, view_func, view_args, view_kwargs):
         template = loader.get_template('maintenance.html')

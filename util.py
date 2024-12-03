@@ -1,9 +1,10 @@
 import logging
 import math
 import datetime
-from datetime import timedelta, date, datetime
 from typing import Type, Union
+from datetime import timedelta, date, datetime
 import importlib
+import hashlib
 
 from types import BuiltinFunctionType, BuiltinMethodType,  FunctionType, MethodType, LambdaType
 from functools import partial
@@ -158,3 +159,9 @@ def compose(f, g):
     def fog(*args, **kwargs):
         return f(g(*args, **kwargs))
     return fog
+
+
+def get_sha256(data):
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    return hashlib.sha256(data).hexdigest()
