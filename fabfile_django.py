@@ -1,265 +1,224 @@
 import os
-from fabric.api import *
-from fabfile_settings import fab_settings
+from fabric import Connection
+from invoke import task
+
+from fabric import Config
+
+__prod = None
+def get_prod(c):
+    global __prod
+    if not __prod:
+        config = Config(overrides={"run": {"echo": True}})
+        __prod = Connection(host=c.default.host, user=c.default.user, config=config)
+    return __prod
 
 
-def get_app_ssh_path():
-    server = fab_settings['PROD_SERVER']
-    app_dir = fab_settings['APP_DIR']
-    app_django_dir = fab_settings['APP_DJANGO_DIR']
-    return f'{server}:{app_dir}/{app_django_dir}'
-
-
-################ ENVIRONMENT ################
-
-
-@task
-def prod():
-    env.environment_name = fab_settings['ENVIRONMENT_NAME']
-    env.hosts = [fab_settings['PROD_SERVER']]
-    env.webapp_dir = fab_settings['APP_DIR']
-    env.restart_script = fab_settings['RESTART_SCRIPT']
-    env.venv_app = fab_settings.get('VENV_SCRIPT', f'cd {env.webapp_dir}')
-    env.main_branch = fab_settings.get('MAIN_BRANCH', 'master')
-    env.port = fab_settings.get('SSH_PORT', 22)
+def app_ssh_path(c):
+    return f'{c.settings.prod_server}:{c.settings.app_dir}/{c.settings.app_django_dir}'
 
 
 ################ GIT ################
 
 
 @task
-def commit():
+def commit(c):
+    """
+    Commit changes
+    """
+    conn = get_prod(c)
     message = input('Enter a git commit message: ')
-    local(f'git add -A && git commit -m "{message}"')
-    print('Changes have been commited')
+    conn.local(f'git add -A && git commit -m "{message}"')
+    print('Changes have been pushed to remote repository...')
 
 
 @task
-def push():
+def push(c):
     """
-    push and pull
+    Push and pull
     """
-    require('hosts')
-    require('venv_app')
-    # local('git submodule foreach git push')
-    local(f'git push origin {env.main_branch}')
-    with prefix(env.venv_app):
-        run('git pull')
-        run('git submodule update --init --recursive')
+    conn = get_prod(c)
+    with conn.prefix(c.settings.venv_script):
+        conn.run('git pull')
+        conn.run('git submodule update --init --recursive')
+
 
 
 ################ DEPLOY ################
 
 
 @task
-def pip():
+def pip(c):
     """
-    install requirements
+    Install requirements
     """
-    require('hosts')
-    require('venv_app')
-    with prefix(env.venv_app):
-        run('pip install --upgrade pip')
-        run('pip install -r requirements.txt')
+    conn = get_prod(c)
+    with conn.prefix(c.settings.venv_script):
+        conn.run('pip install --upgrade pip')
+        conn.run('pip install -r requirements.txt')
 
 
 @task
-def collectstatic():
+def collect_static(c):
     """
-    collect static files
+    Collect static files
     """
-    require('hosts')
-    require('venv_app')
-    with prefix(env.venv_app):
-        run('python manage.py collectstatic --noinput')
+    conn = get_prod(c)
+    with conn.prefix(c.settings.venv_script):
+        conn.run('python manage.py collectstatic --noinput')
 
 
 @task
-def migrate():
+def migrate(c):
     """
-    execute migrations
+    Execute migrations
     """
-    require('hosts')
-    require('venv_app')
-    with prefix(env.venv_app):
-        migrate_apps = fab_settings.get('MIGRATE_APPS', '')
-        run(f'python manage.py migrate {migrate_apps}')
+    conn = get_prod(c)
+    with conn.prefix(c.settings.venv_script):
+        migrate_apps = c.settings.get('migrate_apps', None)
+        conn.run('python manage.py migrate' + (f' {migrate_apps}' if migrate_apps else ''))
 
 
 @task
-def requirements():
+def restart(c):
     """
-    install pip requirements
+    Restart app on the server
     """
-    require('hosts')
-    require('venv_app')
-    with prefix(env.venv_app):
-        run('pip install --upgrade pip')
-        run('pip install -r requirements.txt')
+    conn = get_prod(c)
+    conn.run(c.settings.restart_script)
 
 
 @task
-def upgrade_pip():
+def deploy(c):
     """
-    upgrade pip
+    Push, pull, collect static, restart
     """
-    require('hosts')
-    require('venv_app')
-    with prefix(env.venv_app):
-        run('pip install --upgrade pip')
-
-
-@task
-def restart():
-    """
-    Restart app on the server.
-    """
-    require('hosts')
-    require('restart_script')
-    run(env.restart_script)
-
-
-@task
-def deploy():
-    """
-    push, pull, collect static, restart
-    """
-    require('hosts')
-    require('venv_app')
-    push()
-    deploy_django()
-
-
-@task
-def deploy_django():
-    require('hosts')
-    require('venv_app')
-    collectstatic()
-    migrate()
-    restart()
+    push(c)
+    collect_static(c)
+    migrate(c)
+    restart(c)
 
 
 ################ DATA ################
 
 
 @task
-def sync_media():
+def sync_media(c):
     """
     Download production media files to local computer
     """
-    ssh_path = get_app_ssh_path()
-    local(f'rsync -avz {ssh_path}/media/ media/')
+    conn = get_prod(c)
+    conn.local(f'rsync -avz {app_ssh_path(c)}/media/ media/')
 
 
 @task
-def db_dump():
+def db_dump(c):
     """
-    dump entire db on server and retrieve it
+    Dump entire db on server and retrieve it
     """
-    require('hosts')
-    require('venv_app')
-    dump_data_models = fab_settings['DUMP_DATA_MODELS']
-
-    with prefix(env.venv_app):
-        run('mkdir -p data')
-        run(f'./manage.py dumpdata {dump_data_models} --indent=2 > data/db.json')
-        run('tar cvfz data/db.tgz data/db.json')
-        run('rm data/db.json')
-    local('mkdir -p data')
-    local(f'scp {get_app_ssh_path()}/data/db.tgz data')
+    conn = get_prod(c)
+    with conn.prefix(c.settings.venv_script):
+        conn.run('mkdir -p data', hide=True)
+        conn.run(f'./manage.py dumpdata {c.settings.dump_data_models} --indent=2 > data/db.json')
+        conn.run('tar cvfz data/db.tgz data/db.json')
+        conn.run('rm data/db.json', hide=True)
+    conn.local('mkdir -p data', hide=True)
+    conn.local(f'scp {app_ssh_path(c)}/data/db.tgz data')
 
 
 @task
-def db_load():
+def db_load(c):
     """
-    load the whole db on local computer
+    Load the dumped db on local computer
     """
-    local('tar xvfz data/db.tgz')
-    local('./manage.py django_clear_tables')
-    local('./manage.py loaddata data/db.json')
-    local('rm data/db.json')
+    conn = get_prod(c)
+    conn.local('tar xvfz data/db.tgz')
+    conn.local('./manage.py django_clear_tables')
+    conn.local('./manage.py loaddata data/db.json')
+    conn.local('rm data/db.json')
+
+
 
 
 ################ INITIAL DB ################
 
 
 @task
-def initial_dump():
+def initial_dump(c):
     """
-    dump initial data on server and retrieve it
+    Dump initial data on server and retrieve it
     """
-    require('hosts')
-    require('venv_app')
-    dump_initial_models = fab_settings['DUMP_INITIAL']
-
-    with prefix(env.venv_app):
-        run(f'./manage.py dumpdata {dump_initial_models} --indent=2 > data/initial.json')
-    local(f'scp {get_app_ssh_path()}/data/initial.json data')
+    conn = get_prod(c)
+    with conn.prefix(c.settings.venv_script):
+        conn.run(f'./manage.py dumpdata {c.settings.dump_initial} --indent=2 > data/initial.json')
+    conn.local(f'scp {app_ssh_path(c)}/data/initial.json data')
 
 
 @task
-def initial_load():
+def initial_load(c):
     """
-    load initial data on local computer
+    Load initial data on local computer
     """
-    local('./manage.py loaddata data/initial.json')
+    conn = get_prod(c)
+    conn.local('./manage.py loaddata data/initial.json')
     if os.path.exists('data/initial_local.json'):
-        local('./manage.py loaddata data/initial_local.json')
+        conn.local('./manage.py loaddata data/initial_local.json')
 
 
 @task
-def reset_local_db():
+def reset_local_db(c):
     """
     resets local db
     """
-    username = fab_settings['SUPERUSER_NAME']
-    email = fab_settings['SUPERUSER_MAIL']
-    local('rm -f db.sqlite3')
-    local('./manage.py migrate')
-    print('\n\n\nenter admin password:\n\n\n')
-    local(f'./manage.py createsuperuser --username {username} --email {email}')
-    initial_load()
+    conn = get_prod(c)
+    conn.local('rm -f db.sqlite3')
+    conn.local('./manage.py migrate')
+    print('\n\n\nEnter admin password:\n\n\n')
+    conn.local(f'./manage.py createsuperuser --username {c.settings.superuser_user} --email {c.settings.superuser_mail}', pty=True)
+    initial_load(c)
+
 
 
 ################ RUN JOBS ################
 
 
+def __run_jobs(c, job_type):
+    conn = get_prod(c)
+    with conn.prefix(c.settings.venv_script):
+        conn.run(f'python manage.py runjobs {job_type}')
+
 @task
-def hourly():
+def hourly(c):
     """
-    run hourly jobs, including submit mails
+    Run hourly jobs
     """
-    require('venv_app')
-    with prefix(env.venv_app):
-        run('python manage.py runjobs hourly')
+    __run_jobs(c, 'hourly')
 
 
 @task
-def daily():
+def daily(c):
     """
-    run daily jobs
+    Run daily jobs
     """
-    require('venv_app')
-    with prefix(env.venv_app):
-        run('python manage.py runjobs daily')
+    __run_jobs(c, 'daily')
 
 
 ################ CELERY ################
 
 
 @task
-def celery():
+def celery(c):
     """
-    restarts celery
+    Restarts celery
     """
-    require('hosts')
-    require('venv_app')
-    run('monit restart celery')
+    conn = get_prod(c)
+    conn.run('monit restart celery')
 
 
 @task
-def monit():
-    require('hosts')
-    require('venv_app')
-    run('monit')
-    run('monit status')
+def monit(c):
+    """
+    Monit status
+    """
+    conn = get_prod(c)
+    conn.run('monit')
+    conn.run('monit status')
