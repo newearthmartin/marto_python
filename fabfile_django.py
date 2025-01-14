@@ -37,6 +37,7 @@ def push(c):
     Push and pull
     """
     conn = get_prod(c)
+    conn.local(f'git push origin {c.settings.main_branch}')
     with conn.prefix(c.settings.venv_script):
         conn.run('git pull')
         conn.run('git submodule update --init --recursive')
