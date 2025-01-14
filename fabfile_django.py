@@ -31,7 +31,7 @@ def prod():
 def commit():
     message = input('Enter a git commit message: ')
     local(f'git add -A && git commit -m "{message}"')
-    print('Changes have been pushed to remote repository...')
+    print('Changes have been commited')
 
 
 @task
@@ -46,6 +46,7 @@ def push():
     with prefix(env.venv_app):
         run('git pull')
         run('git submodule update --init --recursive')
+
 
 ################ DEPLOY ################
 
