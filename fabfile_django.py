@@ -212,7 +212,7 @@ def celery(c):
     Restarts celery
     """
     conn = get_prod(c)
-    conn.run('monit restart celery')
+    conn.run(c.settings.restart_celery_script)
 
 
 @task
