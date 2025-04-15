@@ -8,21 +8,26 @@ logger = logging.getLogger(__name__)
 
 
 def run_on_page(page_url, func, logger_extra=None):
+    run = lambda: __run_on_page(page_url, func, logger_extra=logger_extra)
+
     try:
-        return __run_on_page(page_url, func, logger_extra=logger_extra)
+        return run()
     except playwright_errors.TargetClosedError:
         logger.warning('Browser closed! retrying once', extra=logger_extra)
-        return __run_on_page(page_url, func, logger_extra=logger_extra)
+        return run()
     except playwright_errors.TimeoutError:
         logger.warning(f'Timeout on {page_url}', extra=logger_extra)
         return None
     except playwright_errors.Error as e:
         if 'net::ERR_ABORTED' in e.message:
             logger.warning('Browser connection aborted! retrying once', extra=logger_extra)
-            return __run_on_page(page_url, func, logger_extra=logger_extra)
+            return run()
         elif 'ECONNREFUSED' in e.message:
             logger.warning('Browser connection refused! retrying once', extra=logger_extra)
-            return __run_on_page(page_url, func, logger_extra=logger_extra)
+            return run()
+        elif 'connect_over_cdp' in e.message:
+            logger.warning(f'Browser connection error! {e.message.split('\n')[0]} - retrying once', extra=logger_extra)
+            return run()
         elif 'net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH' in e.message:
             log_msg = e.message.split('Call log:')[0].strip()
             logger.warning(log_msg, extra=logger_extra)
