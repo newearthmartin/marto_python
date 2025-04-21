@@ -32,6 +32,9 @@ def run_on_page(page_url, func, logger_extra=None):
             log_msg = e.message.split('Call log:')[0].strip()
             logger.warning(log_msg, extra=logger_extra)
             return None
+        elif 'net::ERR_NAME_NOT_RESOLVED' in e.message:
+            logger.warning(e.message.split('\n')[0], extra=logger_extra)
+            return None
         else:
             raise e
 
