@@ -40,25 +40,25 @@ def open_page(page, url):
         logger.warning(f'HTTP status {response.status} on {url}')
     return response
 
-def run_catching_errors(run_fn, logger_extra=None):
+def run_catching_errors(run_fn, retry=True, logger_extra=None):
     try:
         return run_fn()
     except playwright_errors.TargetClosedError:
         logger.warning('Browser closed! retrying once', extra=logger_extra)
-        return run_fn()
+        return run_fn() if retry else None
     except playwright_errors.TimeoutError:
         logger.warning(f'Timeout on page', extra=logger_extra)
         return None
     except playwright_errors.Error as e:
         if 'net::ERR_ABORTED' in e.message:
             logger.warning('Browser connection aborted! retrying once', extra=logger_extra)
-            return run_fn()
+            return run_fn() if retry else None
         elif 'ECONNREFUSED' in e.message:
             logger.warning('Browser connection refused! retrying once', extra=logger_extra)
-            return run_fn()
+            return run_fn() if retry else None
         elif 'connect_over_cdp' in e.message:
             logger.warning(f'Browser connection error! {e.message.split('\n')[0]} - retrying once', extra=logger_extra)
-            return run_fn()
+            return run_fn() if retry else None
         elif 'net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH' in e.message:
             log_msg = e.message.split('Call log:')[0].strip()
             logger.warning(log_msg, extra=logger_extra)
