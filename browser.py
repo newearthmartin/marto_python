@@ -67,4 +67,5 @@ def run_catching_errors(run_fn, retry=True, logger_extra=None):
             logger.warning(e.message.split('\n')[0], extra=logger_extra)
             return None
         else:
+            logger.warning(f'Unexpected error in playwright - {e.message} - {str(e)} - {type(e)}', extra=logger_extra)
             raise e
