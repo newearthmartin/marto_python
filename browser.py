@@ -34,10 +34,15 @@ def get_chromium(p, logger_extra=None):
         return p.chromium.launch(headless=True, executable_path=chromium_path)
 
 
+async def async_open_page(page, url):
+    response = await page.goto(url, timeout=getattr(settings, 'PLAYWRIGHT_TIMEOUT', None))
+    if response.status != 200: logger.warning(f'HTTP status {response.status} on {url}')
+    return response
+
+
 def open_page(page, url):
     response = page.goto(url, timeout=getattr(settings, 'PLAYWRIGHT_TIMEOUT', None))
-    if response.status != 200:
-        logger.warning(f'HTTP status {response.status} on {url}')
+    if response.status != 200: logger.warning(f'HTTP status {response.status} on {url}')
     return response
 
 def run_catching_errors(run_fn, retry=True, logger_extra=None):
