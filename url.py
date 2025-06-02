@@ -1,4 +1,5 @@
 import logging
+import re
 from urllib.parse import urlparse
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -8,6 +9,11 @@ logger = logging.getLogger(__name__)
 
 def is_absolute(url):
     return bool(urlparse(url).netloc)
+
+
+def is_http(url):
+    if not url: return False
+    return re.search(r'^https?:', url, re.IGNORECASE)
 
 
 def request_param(request_param_dict, param_name, empty_valid=False, default=None, encode_unicode=True):
