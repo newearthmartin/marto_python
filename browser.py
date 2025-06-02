@@ -8,19 +8,18 @@ logger = logging.getLogger(__name__)
 
 
 def run_on_page(page_url, func, logger_extra=None):
-    return run_catching_errors(lambda: __run_on_page(page_url, func, logger_extra=logger_extra),
-                               logger_extra=logger_extra)
+    def run_fn():
+        with sync_playwright() as p:
+            with get_chromium(p) as browser:
+                with browser.new_context() as context:
+                    with context.new_page() as page:
+                        response = open_page(page, page_url)
+                        if response.status != 200: return None
+                        page.wait_for_load_state('load')
+                        return func(page)
 
-
-def __run_on_page(page_url, func, logger_extra=None):
-    with sync_playwright() as p:
-        with get_chromium(p) as browser:
-            logger.info(f'Opening page - {page_url}', extra=logger_extra)
-            with browser.new_page() as page:
-                response = open_page(page, page_url)
-                if response.status != 200: return None
-                page.wait_for_load_state('load')
-                return func(page)
+    logger.info(f'Opening page - {page_url}', extra=logger_extra)
+    return run_catching_errors(run_fn, logger_extra=logger_extra)
 
 
 def get_chromium(p, logger_extra=None):
