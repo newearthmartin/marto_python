@@ -78,7 +78,7 @@ def run_catching_errors(run_fn, retry=True, logger_extra=None):
             logger.warning(e.message.split('\n')[0], extra=logger_extra)
             return None
         else:
-            logger.error(f'Unexpected Playwright.Error - {e.message} - {str(e)} - {type(e)}', extra=logger_extra, exc_info=True)
+            logger.error(f'Unexpected Playwright.Error - {type(e) - {e.message} - {str_e}}', extra=logger_extra, exc_info=True)
             raise e
     except BaseException as e:
         str_e = str(e)
@@ -87,7 +87,7 @@ def run_catching_errors(run_fn, retry=True, logger_extra=None):
             logger.warning(f'Browser connection error! {str_e.split('\n')[0]}{retry_msg}', extra=logger_extra)
             return run_fn() if retry else None
         else:
-            logger.error(f'Unexpected playwright Exception - {e.message} - {str(e)} - {type(e)}', extra=logger_extra, exc_info=True)
+            logger.error(f'Unexpected playwright Exception - {type(e)} - {str_e}', extra=logger_extra, exc_info=True)
             raise e
 
 
