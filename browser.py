@@ -93,9 +93,11 @@ class AsyncBrowserManager:
     async def __check_browser(self, logger_extra=None):
         if self.browser:
             try:
-                await self.browser.send("Target.getTargets")
+                session = await self.browser.new_browser_cdp_session()
+                await session.send("Target.getTargets")
+                await session.detach()
             except Exception as e:
-                logger.error(e,  exc_info=True, extra=logger_extra)
+                logger.error(e, exc_info=True, extra=logger_extra)
                 await self.close()
 
     async def close(self):
