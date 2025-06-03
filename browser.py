@@ -1,6 +1,7 @@
 import logging
 from django.conf import settings
 from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 from playwright._impl import _errors as playwright_errors
 
 
@@ -73,3 +74,34 @@ def run_catching_errors(run_fn, retry=True, logger_extra=None):
         else:
             logger.warning(f'Unexpected error in playwright - {e.message} - {str(e)} - {type(e)}', extra=logger_extra)
             raise e
+
+
+class AsyncBrowserManager:
+    def __init__(self):
+        self.playwright = None
+        self.browser = None
+
+    async def __aenter__(self): return self
+    async def __aexit__(self, exc_type, exc_value, traceback): await self.close()
+
+    async def get_browser(self, logger_extra=None):
+        await self.__check_browser(logger_extra=logger_extra)
+        if not self.playwright: self.playwright = await async_playwright().start()
+        if not self.browser: self.browser = await get_chromium(self.playwright, logger_extra=logger_extra)
+        return self.browser
+
+    async def __check_browser(self, logger_extra=None):
+        if self.browser:
+            try:
+                await self.browser.send("Target.getTargets")
+            except Exception as e:
+                logger.error(e,  exc_info=True, extra=logger_extra)
+                await self.close()
+
+    async def close(self):
+        if self.browser:
+            await self.browser.close()
+            self.browser = None
+        if self.playwright:
+            await self.playwright.stop()
+            self.playwright = None
