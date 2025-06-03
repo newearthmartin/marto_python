@@ -78,7 +78,7 @@ def run_catching_errors(run_fn, retry=True, logger_extra=None):
     except BaseException as e:
         str_e = str(e)
         if 'connect_over_cdp' in str_e:
-            logger.warning(f'Browser connection error! {str_e}{retry_msg}', extra=logger_extra)
+            logger.warning(str_e + retry_msg, extra=logger_extra)
             return run_fn() if retry else None
         else:
             logger.error(f'Unexpected playwright BaseException - type: {type(e)} - str: {str_e}', extra=logger_extra, exc_info=True)
