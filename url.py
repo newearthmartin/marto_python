@@ -13,7 +13,7 @@ def is_absolute(url):
 
 def is_http(url):
     if not url: return False
-    return re.search(r'^https?:', url, re.IGNORECASE)
+    return re.match(r'^https?:', url, re.IGNORECASE) is not None
 
 
 def request_param(request_param_dict, param_name, empty_valid=False, default=None, encode_unicode=True):
