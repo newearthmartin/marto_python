@@ -56,7 +56,6 @@ def run_catching_errors(run_fn, retry=True, logger_extra=None):
         logger.warning(f'Timeout on page', extra=logger_extra)
         return None
     except playwright_errors.Error as e:
-        str_e = str(e)
         if 'net::ERR_ABORTED' in e.message:
             logger.warning(f'Browser connection aborted!{retry_msg}', extra=logger_extra)
             return run_fn() if retry else None
@@ -66,10 +65,6 @@ def run_catching_errors(run_fn, retry=True, logger_extra=None):
         elif 'Target page, context or browser has been closed' in e.message:
             logger.warning(f'Browser/context/page closed!{retry_msg}', extra=logger_extra)
             return run_fn() if retry else None
-        elif 'connect_over_cdp' in str_e:
-            logger.error('CATCH playwright_errors.Error - {str_e}', extra=logger_extra, exc_info=True)
-            logger.warning(f'Browser connection error! {str_e.split('\n')[0]}{retry_msg}', extra=logger_extra)
-            return run_fn() if retry else None
         elif 'net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH' in e.message:
             log_msg = e.message.split('Call log:')[0].strip()
             logger.warning(log_msg, extra=logger_extra)
@@ -78,13 +73,12 @@ def run_catching_errors(run_fn, retry=True, logger_extra=None):
             logger.warning(e.message.split('\n')[0], extra=logger_extra)
             return None
         else:
-            logger.error(f'Unexpected Playwright.Error - type: {type(e)} - msg: {e.message} - str: {str_e}', extra=logger_extra, exc_info=True)
+            logger.error(f'Unexpected Playwright.Error - type: {type(e)} - msg: {e.message} - str: {str(e)}', extra=logger_extra, exc_info=True)
             raise e
     except BaseException as e:
         str_e = str(e)
         if 'connect_over_cdp' in str_e:
-            logger.error(f'CATCH Exception - type {type(e)} - str: {str_e}', extra=logger_extra, exc_info=True)
-            logger.warning(f'Browser connection error! {str_e.split('\n')[0]}{retry_msg}', extra=logger_extra)
+            logger.warning(f'Browser connection error! {str_e}{retry_msg}', extra=logger_extra)
             return run_fn() if retry else None
         else:
             logger.error(f'Unexpected playwright BaseException - type: {type(e)} - str: {str_e}', extra=logger_extra, exc_info=True)
