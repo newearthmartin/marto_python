@@ -55,14 +55,18 @@ def run_catching_errors(run_fn, retry=True, logger_extra=None):
         logger.warning(f'Timeout on page', extra=logger_extra)
         return None
     except playwright_errors.Error as e:
+        retry_msg = ' - Retrying' if retry else ''
         if 'net::ERR_ABORTED' in e.message:
-            logger.warning('Browser connection aborted! retrying once', extra=logger_extra)
+            logger.warning(f'Browser connection aborted!{retry_msg}', extra=logger_extra)
             return run_fn() if retry else None
         elif 'ECONNREFUSED' in e.message:
-            logger.warning('Browser connection refused! retrying once', extra=logger_extra)
+            logger.warning(f'Browser connection refused!{retry_msg}', extra=logger_extra)
+            return run_fn() if retry else None
+        elif 'Target page, context or browser has been closed' in e.message:
+            logger.warning(f'Browser/context/page closed!{retry_msg}', extra=logger_extra)
             return run_fn() if retry else None
         elif 'connect_over_cdp' in e.message:
-            logger.warning(f'Browser connection error! {e.message.split('\n')[0]} - retrying once', extra=logger_extra)
+            logger.warning(f'Browser connection error! {e.message.split('\n')[0]}{retry_msg}', extra=logger_extra)
             return run_fn() if retry else None
         elif 'net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH' in e.message:
             log_msg = e.message.split('Call log:')[0].strip()
