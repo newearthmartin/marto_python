@@ -16,8 +16,16 @@ def add_list_elem(dct, key, elem):
         dct[key] = [elem]
 
 
-def map_dict(dct: dict, map_fn: Callable) -> dict:
+def map_dict(map_fn: Callable, dct: dict) -> dict:
     return {k: map_fn(k, v) for k, v in dct.items()}
+
+
+def flat_map(map_fn: Callable, iterable: Iterable) -> Iterable:
+    return flatten(map_fn(e) for e in iterable)
+
+
+def flatten(iterable: Iterable) -> Iterable:
+    return (e2 for e1 in iterable for e2 in e1)
 
 
 def to_list(dct: dict, sort_by_key: bool = False, sorting_key_fn: Optional[Callable] = None):
