@@ -72,9 +72,15 @@ def run_catching_errors(run_fn, retry=True, logger_extra=None):
         elif 'net::ERR_NAME_NOT_RESOLVED' in e.message:
             logger.warning(e.message.split('\n')[0], extra=logger_extra)
             return None
+        elif 'Browser.new_context' in e.message:
+            logger.warning(e.message + retry_msg, extra=logger_extra)
+            return run_fn() if retry else None
+        elif 'BrowserContext.__exit__' in e.message:
+            logger.warning(e.message, extra=logger_extra)
+            return None
         else:
-            logger.error(f'Unexpected Playwright.Error - type: {type(e)} - msg: {e.message} - str: {str(e)}', extra=logger_extra, exc_info=True)
-            raise e
+            logger.error(f'Unexpected Playwright.Error - type: {type(e)} - msg: {e.message}', extra=logger_extra, exc_info=True)
+            return None
     except BaseException as e:
         str_e = str(e)
         if 'connect_over_cdp' in str_e:
@@ -82,7 +88,7 @@ def run_catching_errors(run_fn, retry=True, logger_extra=None):
             return run_fn() if retry else None
         else:
             logger.error(f'Unexpected playwright BaseException - type: {type(e)} - str: {str_e}', extra=logger_extra, exc_info=True)
-            raise e
+            return None
 
 
 class AsyncBrowserManager:
