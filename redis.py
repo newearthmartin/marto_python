@@ -3,11 +3,15 @@ from django.conf import settings
 from redlock.lock import RedLockFactory
 
 
-def get_redis():
-    return Redis(port=settings.REDIS_PORT)
-
-
+__redis = None
 __redlock_factory = None
+
+
+def get_redis():
+    global __redis
+    if not __redis:
+        __redis = Redis(port=settings.REDIS_PORT)
+    return __redis
 
 
 def redis_lock(lock_name, *args, **kwargs):
