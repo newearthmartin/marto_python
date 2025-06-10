@@ -40,7 +40,7 @@ def scp_cmd(c):
 def rsync_cmd(c):
     cmd = 'rsync'
     if port := getattr(c.default, 'port', None):
-        cmd += f' --port {port}'
+        cmd += f' -e "ssh -p {port}"'
     return cmd
 
 
