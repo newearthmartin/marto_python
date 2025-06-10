@@ -5,6 +5,8 @@ from invoke import task
 from fabric import Config
 
 __prod = None
+
+
 def get_prod(c):
     global __prod
     if not __prod:
@@ -17,7 +19,7 @@ def app_ssh_path(c):
     return f'{c.settings.prod_server}:{c.settings.app_dir}/{c.settings.app_django_dir}'
 
 
-################ GIT ################
+# ############### GIT ################
 
 
 @task
@@ -44,8 +46,7 @@ def push(c):
         conn.run('git submodule update --init --recursive')
 
 
-
-################ DEPLOY ################
+# ############### DEPLOY ################
 
 
 @task
@@ -53,12 +54,11 @@ def pip(c):
     """
     Install requirements
     """
-    pip = getattr(c.settings, 'pip', 'pip')
-    print(f'Using pip: {pip}')
+    pip_cmd = getattr(c.settings, 'pip', 'pip')
     conn = get_prod(c)
     with conn.prefix(c.settings.venv_script):
-        conn.run(f'{pip} install --upgrade pip')
-        conn.run(f'{pip} install -r requirements.txt')
+        conn.run(f'{pip_cmd} install --upgrade pip')
+        conn.run(f'{pip_cmd} install -r requirements.txt')
 
 
 @task
@@ -102,7 +102,7 @@ def deploy(c):
     restart(c)
 
 
-################ DATA ################
+# ############### DATA ################
 
 
 @task
@@ -141,9 +141,7 @@ def db_load(c):
     conn.local('rm data/db.json')
 
 
-
-
-################ INITIAL DB ################
+# ############### INITIAL DB ################
 
 
 @task
@@ -173,22 +171,24 @@ def reset_local_db(c):
     """
     resets local db
     """
+    user = c.settings.superuser_user
+    email = c.settings.superuser_mail
     conn = get_prod(c)
     conn.local('rm -f db.sqlite3')
     conn.local('./manage.py migrate')
     print('\n\n\nEnter admin password:\n\n\n')
-    conn.local(f'./manage.py createsuperuser --username {c.settings.superuser_user} --email {c.settings.superuser_mail}', pty=True)
+    conn.local(f'./manage.py createsuperuser --username {user} --email {email}', pty=True)
     initial_load(c)
 
 
-
-################ RUN JOBS ################
+# ############### RUN JOBS ################
 
 
 def __run_jobs(c, job_type):
     conn = get_prod(c)
     with conn.prefix(c.settings.venv_script):
         conn.run(f'python manage.py runjobs {job_type}')
+
 
 @task
 def hourly(c):
@@ -206,7 +206,7 @@ def daily(c):
     __run_jobs(c, 'daily')
 
 
-################ CELERY ################
+# ############### CELERY ################
 
 
 @task
