@@ -52,10 +52,12 @@ def pip(c):
     """
     Install requirements
     """
+    pip = getattr(c.settings, 'pip', 'pip')
+    print(f'Using pip: {pip}')
     conn = get_prod(c)
     with conn.prefix(c.settings.venv_script):
-        conn.run('pip install --upgrade pip')
-        conn.run('pip install -r requirements.txt')
+        conn.run(f'{pip} install --upgrade pip')
+        conn.run(f'{pip} install -r requirements.txt')
 
 
 @task
