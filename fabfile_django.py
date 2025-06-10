@@ -18,11 +18,17 @@ def get_prod(c):
     return __prod
 
 
+def prod_server(c):
+    host = c.default.host
+    user = getattr(c.default, "user", None)
+    return f'{user}@{host}' if user else host
+
+
 def app_ssh_path(c):
     app_dir = c.settings.app_dir
     app_django_dir = getattr(c.settings, 'app_django_dir', None)
     path = f'{app_dir}/{app_django_dir}' if app_django_dir else app_dir
-    return f'{c.settings.prod_server}:{path}'
+    return f'{prod_server(c)}:{path}'
 
 
 def app_prefix(c, conn):
