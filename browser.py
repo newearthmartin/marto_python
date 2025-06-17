@@ -8,21 +8,6 @@ from playwright._impl import _errors as playwright_errors
 logger = logging.getLogger(__name__)
 
 
-def run_on_page(page_url, func, logger_extra=None):
-    def run_fn():
-        with sync_playwright() as p:
-            with get_chromium(p) as browser:
-                with browser.new_context() as context:
-                    with context.new_page() as page:
-                        response = open_page(page, page_url)
-                        if response.status != 200: return None
-                        page.wait_for_load_state('load')
-                        return func(page)
-
-    logger.info(f'Opening page - {page_url}', extra=logger_extra)
-    return run_catching_errors(run_fn, logger_extra=logger_extra)
-
-
 def get_chromium(p, logger_extra=None):
     chromium_cdp = getattr(settings, 'CHROMIUM_CDP', None)
     if chromium_cdp:
@@ -34,21 +19,42 @@ def get_chromium(p, logger_extra=None):
         return p.chromium.launch(headless=True, executable_path=chromium_path)
 
 
-async def async_open_page(page, url):
+async def run_on_page(page_url, page_func, logger_extra=None):
+    async def fn(page):
+        response = await open_page(page, page_url, logger_extra=logger_extra)
+        if response.status != 200: return None
+        await page.wait_for_load_state('load')
+        return await page_func(page)
+
+    async with AsyncBrowserManager() as browser_manager:
+        return await new_page(browser_manager, fn, logger_extra=logger_extra)
+
+
+async def new_page(browser_manager, page_func, logger_extra=None):
+    context = None
+    page = None
+    browser = None
+    try:
+        browser = await browser_manager.get_browser(logger_extra=logger_extra)
+        context = await browser.new_context()
+        page = await context.new_page()
+        return await catch_playwright_errors(lambda: page_func(page), logger_extra=logger_extra)
+    finally:
+        if page: await page.close()
+        if context: await context.close()
+        if browser: await browser.close()
+
+
+async def open_page(page, url, logger_extra=None):
     response = await page.goto(url, timeout=getattr(settings, 'PLAYWRIGHT_TIMEOUT', None))
-    if response.status != 200: logger.warning(f'HTTP status {response.status} on {url}')
+    if response.status != 200: logger.warning(f'HTTP status {response.status} on {url}', extra=logger_extra)
     return response
 
 
-def open_page(page, url):
-    response = page.goto(url, timeout=getattr(settings, 'PLAYWRIGHT_TIMEOUT', None))
-    if response.status != 200: logger.warning(f'HTTP status {response.status} on {url}')
-    return response
-
-def run_catching_errors(run_fn, retry=True, logger_extra=None):
+async def catch_playwright_errors(run_fn, retry=True, logger_extra=None):
     retry_msg = ' - Retrying' if retry else ''
     try:
-        return run_fn()
+        return await run_fn()
     except playwright_errors.TargetClosedError:
         logger.warning('Browser closed! retrying once', extra=logger_extra)
         return run_fn() if retry else None
