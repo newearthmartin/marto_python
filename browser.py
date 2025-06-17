@@ -21,7 +21,7 @@ def get_chromium(p, logger_extra=None):
 
 async def run_on_page(page_url, page_func, logger_extra=None):
     async def fn(page):
-        response = await open_page(page, page_url, logger_extra=logger_extra)
+        response = await page_goto(page, page_url, logger_extra=logger_extra)
         if response.status != 200: return None
         await page.wait_for_load_state('load')
         return await page_func(page)
@@ -45,7 +45,7 @@ async def new_page(browser_manager, page_func, logger_extra=None):
         if browser: await browser.close()
 
 
-async def open_page(page, url, logger_extra=None):
+async def page_goto(page, url, logger_extra=None):
     response = await page.goto(url, timeout=getattr(settings, 'PLAYWRIGHT_TIMEOUT', None))
     if response.status != 200: logger.warning(f'HTTP status {response.status} on {url}', extra=logger_extra)
     return response
