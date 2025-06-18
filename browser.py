@@ -1,5 +1,6 @@
 import logging
 from django.conf import settings
+from django.template.defaulttags import lorem
 from playwright.sync_api import sync_playwright
 from playwright.async_api import async_playwright
 from playwright._impl import _errors as playwright_errors
@@ -33,7 +34,6 @@ async def run_on_page(page_url, page_func, logger_extra=None):
 async def new_page(browser_manager, page_func, logger_extra=None):
     context = None
     page = None
-    browser = None
     try:
         browser = await browser_manager.get_browser(logger_extra=logger_extra)
         context = await browser.new_context()
@@ -42,7 +42,6 @@ async def new_page(browser_manager, page_func, logger_extra=None):
     finally:
         if page: await page.close()
         if context: await context.close()
-        if browser: await browser.close()
 
 
 async def page_goto(page, url, logger_extra=None):
