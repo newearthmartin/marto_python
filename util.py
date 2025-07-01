@@ -5,6 +5,7 @@ from typing import Type, Union
 from datetime import timedelta, date, datetime
 import importlib
 import hashlib
+import warnings
 
 from types import BuiltinFunctionType, BuiltinMethodType,  FunctionType, MethodType, LambdaType
 from functools import partial
@@ -165,3 +166,13 @@ def get_sha256(data):
     if isinstance(data, str):
         data = data.encode('utf-8')
     return hashlib.sha256(data).hexdigest()
+
+
+def filter_warnings(func, filter_out_texts):
+    with warnings.catch_warnings(record=True) as warnings_caught:
+        warnings.simplefilter("always")
+        rv= func()
+        for warning in warnings_caught:
+            if not any(t in str(warning.message) for t in filter_out_texts):
+                logger.warning(warning.message)
+    return rv
