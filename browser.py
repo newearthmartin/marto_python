@@ -45,6 +45,7 @@ async def new_page(browser_manager, page_func, logger_extra=None):
 
 
 async def page_goto(page, url, logger_extra=None):
+    logger.info(f'Opening page {url}', extra=logger_extra)
     response = await page.goto(url, timeout=getattr(settings, 'PLAYWRIGHT_TIMEOUT', None))
     if response.status != 200: logger.warning(f'HTTP status {response.status} on {url}', extra=logger_extra)
     return response
