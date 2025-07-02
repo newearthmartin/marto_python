@@ -19,3 +19,7 @@ def redis_lock(lock_name, *args, **kwargs):
     if not __redlock_factory:
         __redlock_factory = RedLockFactory([{'host': 'localhost', 'port': settings.REDIS_PORT}])
     return __redlock_factory.create_lock(lock_name, *args, **kwargs)
+
+
+def get_redis_key(fn, *args, **kwargs):
+    return f'{fn.__module__}.{fn.__name__}-{args}{kwargs}'
