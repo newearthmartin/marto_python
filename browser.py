@@ -19,18 +19,6 @@ def get_chromium(p, logger_extra=None):
         return p.chromium.launch(headless=True, executable_path=chromium_path, args=chromium_args)
 
 
-async def run_on_page(page_url, page_func, logger_extra=None):
-    async def fn(page):
-        if page_url:
-            response = await page_goto(page, page_url, logger_extra=logger_extra)
-            if response.status != 200: return None
-            await page.wait_for_load_state('load')
-        return await page_func(page)
-
-    async with AsyncBrowserManager() as browser_manager:
-        return await new_page(browser_manager, fn, logger_extra=logger_extra)
-
-
 async def new_page(browser_manager, page_func, logger_extra=None):
     context = None
     page = None
@@ -44,8 +32,20 @@ async def new_page(browser_manager, page_func, logger_extra=None):
         if context: await context.close()
 
 
-async def browser_gc(page):
-    gc = await page.evaluate("if (window.gc) {gc(); true;} else {false;}");
+async def run_on_page(browser_manager, page_url, page_func, logger_extra=None):
+    async def fn(page):
+        if page_url:
+            response = await page_goto(page, page_url, logger_extra=logger_extra)
+            if response.status != 200: return None
+            await page.wait_for_load_state('load')
+        return await page_func(page)
+
+    return await new_page(browser_manager, fn, logger_extra=logger_extra)
+
+
+async def browser_gc(browser_manager, logger_extra=None):
+    script = 'if (window.gc) {gc(); true;} else {false;}'
+    gc = await run_on_page(browser_manager, None, lambda page: page.evaluate(script), logger_extra=logger_extra)
     if not gc:
         logger.warning('Browser gc not available')
     return gc
@@ -64,20 +64,20 @@ async def catch_playwright_errors(run_fn, retry=True, logger_extra=None):
         return await run_fn()
     except playwright_errors.TargetClosedError:
         logger.warning('Browser closed! retrying once', extra=logger_extra)
-        return run_fn() if retry else None
+        return await run_fn() if retry else None
     except playwright_errors.TimeoutError:
         logger.warning(f'Timeout on page', extra=logger_extra)
         return None
     except playwright_errors.Error as e:
         if 'net::ERR_ABORTED' in e.message:
             logger.warning(f'Browser connection aborted!{retry_msg}', extra=logger_extra)
-            return run_fn() if retry else None
+            return await run_fn() if retry else None
         elif 'ECONNREFUSED' in e.message:
             logger.warning(f'Browser connection refused!{retry_msg}', extra=logger_extra)
-            return run_fn() if retry else None
+            return await run_fn() if retry else None
         elif 'Target page, context or browser has been closed' in e.message:
             logger.warning(f'Browser/context/page closed!{retry_msg}', extra=logger_extra)
-            return run_fn() if retry else None
+            return await run_fn() if retry else None
         elif 'net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH' in e.message:
             log_msg = e.message.split('Call log:')[0].strip()
             logger.warning(log_msg, extra=logger_extra)
@@ -87,7 +87,7 @@ async def catch_playwright_errors(run_fn, retry=True, logger_extra=None):
             return None
         elif 'Browser.new_context' in e.message:
             logger.warning(e.message + retry_msg, extra=logger_extra)
-            return run_fn() if retry else None
+            return await run_fn() if retry else None
         elif 'BrowserContext.__exit__' in e.message:
             logger.warning(e.message, extra=logger_extra)
             return None
@@ -98,7 +98,7 @@ async def catch_playwright_errors(run_fn, retry=True, logger_extra=None):
         str_e = str(e)
         if 'connect_over_cdp' in str_e:
             logger.warning(str_e + retry_msg, extra=logger_extra)
-            return run_fn() if retry else None
+            return await run_fn() if retry else None
         else:
             logger.error(f'Unexpected playwright BaseException - type: {type(e)} - str: {str_e}', extra=logger_extra, exc_info=True)
             return None
