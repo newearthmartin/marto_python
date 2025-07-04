@@ -1,7 +1,5 @@
 import logging
 from django.conf import settings
-from django.template.defaulttags import lorem
-from playwright.sync_api import sync_playwright
 from playwright.async_api import async_playwright
 from playwright._impl import _errors as playwright_errors
 
@@ -16,15 +14,17 @@ def get_chromium(p, logger_extra=None):
         return p.chromium.connect_over_cdp(chromium_cdp)
     else:
         chromium_path = getattr(settings, 'CHROMIUM_PATH', None)
-        logger.debug(f'Creating Chromium instance - path: {chromium_path}', extra=logger_extra)
-        return p.chromium.launch(headless=True, executable_path=chromium_path)
+        chromium_args = getattr(settings, 'CHROMIUM_ARGS', None)
+        logger.debug(f'Creating Chromium instance - path: {chromium_path} - args: {chromium_args}', extra=logger_extra)
+        return p.chromium.launch(headless=True, executable_path=chromium_path, args=chromium_args)
 
 
 async def run_on_page(page_url, page_func, logger_extra=None):
     async def fn(page):
-        response = await page_goto(page, page_url, logger_extra=logger_extra)
-        if response.status != 200: return None
-        await page.wait_for_load_state('load')
+        if page_url:
+            response = await page_goto(page, page_url, logger_extra=logger_extra)
+            if response.status != 200: return None
+            await page.wait_for_load_state('load')
         return await page_func(page)
 
     async with AsyncBrowserManager() as browser_manager:
@@ -42,6 +42,13 @@ async def new_page(browser_manager, page_func, logger_extra=None):
     finally:
         if page: await page.close()
         if context: await context.close()
+
+
+async def browser_gc(page):
+    gc = await page.evaluate("if (window.gc) {gc(); true;} else {false;}");
+    if not gc:
+        logger.warning('Browser gc not available')
+    return gc
 
 
 async def page_goto(page, url, logger_extra=None):
