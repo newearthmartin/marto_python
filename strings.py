@@ -90,3 +90,8 @@ def unescape_html_entities(s):
         char = chr(code)
         s = s.replace(match, char)
     return s
+
+
+def first_line(s: str | None) -> str | None:
+    if not s: return s
+    return s.split('\n')[0]

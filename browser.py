@@ -2,6 +2,7 @@ import logging
 from django.conf import settings
 from playwright.async_api import async_playwright
 from playwright._impl import _errors as playwright_errors
+from marto_python.strings import first_line
 
 
 logger = logging.getLogger(__name__)
@@ -83,7 +84,7 @@ async def catch_playwright_errors(run_fn, retry=True, logger_extra=None):
             logger.warning(log_msg, extra=logger_extra)
             return None
         elif 'net::ERR_NAME_NOT_RESOLVED' in e.message:
-            logger.warning(e.message.split('\n')[0], extra=logger_extra)
+            logger.warning(first_line(e.message), extra=logger_extra)
             return None
         elif 'Browser.new_context' in e.message:
             logger.warning(e.message + retry_msg, extra=logger_extra)
