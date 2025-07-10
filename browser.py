@@ -1,5 +1,6 @@
 import logging
 from django.conf import settings
+from asgiref.sync import sync_to_async
 from playwright.async_api import async_playwright
 from playwright._impl import _errors as playwright_errors
 from marto_python.strings import first_line
@@ -93,7 +94,7 @@ async def catch_playwright_errors(run_fn, retry=True, logger_extra=None):
             logger.warning(e.message, extra=logger_extra)
             return None
         else:
-            logger.error(f'Unexpected Playwright.Error - type: {type(e)} - msg: {e.message}', extra=logger_extra, exc_info=True)
+            await sync_to_async(logger.error)(f'Unexpected Playwright.Error - type: {type(e)} - msg: {e.message}', extra=logger_extra, exc_info=True)
             return None
     except BaseException as e:
         str_e = str(e)
@@ -101,7 +102,7 @@ async def catch_playwright_errors(run_fn, retry=True, logger_extra=None):
             logger.warning(str_e + retry_msg, extra=logger_extra)
             return await run_fn() if retry else None
         else:
-            logger.error(f'Unexpected playwright BaseException - type: {type(e)} - str: {str_e}', extra=logger_extra, exc_info=True)
+            await sync_to_async(logger.error)(f'Unexpected playwright BaseException - type: {type(e)} - str: {str_e}', extra=logger_extra, exc_info=True)
             return None
 
 
