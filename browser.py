@@ -1,3 +1,4 @@
+import time
 import logging
 from django.conf import settings
 from asgiref.sync import sync_to_async
@@ -61,25 +62,31 @@ async def page_goto(page, url, logger_extra=None):
 
 
 async def catch_playwright_errors(run_fn, retry=True, logger_extra=None):
+    logger_error = sync_to_async(logger.error)
+
+    async def retry_fn():
+        time.sleep(5)
+        return await catch_playwright_errors(run_fn, retry=False, logger_extra=logger_extra)
+
     retry_msg = ' - Retrying' if retry else ''
     try:
         return await run_fn()
     except playwright_errors.TargetClosedError:
         logger.warning('Browser closed! retrying once', extra=logger_extra)
-        return await run_fn() if retry else None
+        return await retry_fn() if retry else None
     except playwright_errors.TimeoutError:
         logger.warning(f'Timeout on page', extra=logger_extra)
         return None
     except playwright_errors.Error as e:
         if 'net::ERR_ABORTED' in e.message:
             logger.warning(f'Browser connection aborted!{retry_msg}', extra=logger_extra)
-            return await run_fn() if retry else None
+            return await retry_fn() if retry else None
         elif 'ECONNREFUSED' in e.message:
             logger.warning(f'Browser connection refused!{retry_msg}', extra=logger_extra)
-            return await run_fn() if retry else None
+            return await retry_fn() if retry else None
         elif 'Target page, context or browser has been closed' in e.message:
             logger.warning(f'Browser/context/page closed!{retry_msg}', extra=logger_extra)
-            return await run_fn() if retry else None
+            return await retry_fn() if retry else None
         elif 'net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH' in e.message:
             log_msg = e.message.split('Call log:')[0].strip()
             logger.warning(log_msg, extra=logger_extra)
@@ -89,20 +96,20 @@ async def catch_playwright_errors(run_fn, retry=True, logger_extra=None):
             return None
         elif 'Browser.new_context' in e.message:
             logger.warning(e.message + retry_msg, extra=logger_extra)
-            return await run_fn() if retry else None
+            return await retry_fn() if retry else None
         elif 'BrowserContext.__exit__' in e.message:
             logger.warning(e.message, extra=logger_extra)
             return None
         else:
-            await sync_to_async(logger.error)(f'Unexpected Playwright.Error - type: {type(e)} - msg: {e.message}', extra=logger_extra, exc_info=True)
+            await logger_error(f'Unexpected Playwright.Error - type: {type(e)} - msg: {e.message}', extra=logger_extra)
             return None
     except BaseException as e:
         str_e = str(e)
         if 'connect_over_cdp' in str_e:
             logger.warning(str_e + retry_msg, extra=logger_extra)
-            return await run_fn() if retry else None
+            return await retry_fn() if retry else None
         else:
-            await sync_to_async(logger.error)(f'Unexpected playwright BaseException - type: {type(e)} - str: {str_e}', extra=logger_extra, exc_info=True)
+            await logger_error(f'Unexpected playwright BaseException - type: {type(e)} - str: {str_e}', extra=logger_extra)
             return None
 
 
