@@ -22,14 +22,14 @@ def get_chromium(p, logger_extra=None):
         return p.chromium.launch(headless=True, executable_path=chromium_path, args=chromium_args)
 
 
-async def new_page(browser_manager, page_func, logger_extra=None):
+async def new_page(browser, page_func, logger_extra=None):
     context = None
     page = None
     try:
-        browser = await browser_manager.get_browser(logger_extra=logger_extra)
         context = await browser.new_context()
         page = await context.new_page()
-        return await catch_playwright_errors(lambda: page_func(page), logger_extra=logger_extra)
+        async def run_fn(): return await page_func(page)
+        return await catch_playwright_errors(run_fn, logger_extra=logger_extra)
     finally:
         if page: await page.close()
         if context: await context.close()
@@ -42,8 +42,8 @@ async def run_on_page(browser_manager, page_url, page_func, logger_extra=None):
             if response.status != 200: return None
             await page.wait_for_load_state('load')
         return await page_func(page)
-
-    return await new_page(browser_manager, fn, logger_extra=logger_extra)
+    browser = browser_manager.get_browser(logger_extra=logger_extra)
+    return await new_page(browser, fn, logger_extra=logger_extra)
 
 
 async def browser_gc(browser_manager, logger_extra=None):
