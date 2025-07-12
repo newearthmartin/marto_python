@@ -42,7 +42,7 @@ async def run_on_page(browser_manager, page_url, page_func, logger_extra=None):
             if response.status != 200: return None
             await page.wait_for_load_state('load')
         return await page_func(page)
-    browser = browser_manager.get_browser(logger_extra=logger_extra)
+    browser = await browser_manager.get_browser(logger_extra=logger_extra)
     return await new_page(browser, fn, logger_extra=logger_extra)
 
 
