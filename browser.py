@@ -35,20 +35,20 @@ async def new_page(browser, page_func, logger_extra=None):
         if context: await context.close()
 
 
-async def run_on_page(browser_manager, page_url, page_func, logger_extra=None):
+async def run_on_page(browser, page_url, page_func, logger_extra=None):
     async def fn(page):
         if page_url:
             response = await page_goto(page, page_url, logger_extra=logger_extra)
             if response.status != 200: return None
             await page.wait_for_load_state('load')
         return await page_func(page)
-    browser = await browser_manager.get_browser(logger_extra=logger_extra)
     return await new_page(browser, fn, logger_extra=logger_extra)
 
 
-async def browser_gc(browser_manager, logger_extra=None):
-    script = 'if (window.gc) {gc(); true;} else {false;}'
-    gc = await run_on_page(browser_manager, None, lambda page: page.evaluate(script), logger_extra=logger_extra)
+async def browser_gc(browser, logger_extra=None):
+    async def run_fn(page):
+        return await page.evaluate('if (window.gc) {gc(); true;} else {false;}')
+    gc = await new_page(browser, run_fn, logger_extra=logger_extra)
     if not gc:
         logger.warning('Browser gc not available')
     return gc
