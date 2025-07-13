@@ -72,7 +72,7 @@ async def catch_playwright_errors(run_fn, retry=True, logger_extra=None):
     try:
         return await run_fn()
     except playwright_errors.TargetClosedError:
-        logger.warning('Browser closed! retrying once', extra=logger_extra)
+        logger.warning(f'Browser closed!{retry_msg}', extra=logger_extra)
         return await retry_fn() if retry else None
     except playwright_errors.TimeoutError:
         logger.warning(f'Timeout on page', extra=logger_extra)
