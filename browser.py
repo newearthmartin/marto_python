@@ -22,14 +22,13 @@ def get_chromium(p, logger_extra=None):
         return p.chromium.launch(headless=True, executable_path=chromium_path, args=chromium_args)
 
 
-async def new_page(browser, page_func, logger_extra=None):
+async def new_page(browser, page_func):
     context = None
     page = None
     try:
         context = await browser.new_context()
         page = await context.new_page()
-        async def run_fn(): return await page_func(page)
-        return await catch_playwright_errors(run_fn, logger_extra=logger_extra)
+        return await page_func(page)
     finally:
         if page: await page.close()
         if context: await context.close()
@@ -37,12 +36,11 @@ async def new_page(browser, page_func, logger_extra=None):
 
 async def run_on_page(browser, page_url, page_func, logger_extra=None):
     async def fn(page):
-        if page_url:
-            response = await page_goto(page, page_url, logger_extra=logger_extra)
-            if response.status != 200: return None
-            await page.wait_for_load_state('load')
+        response = await page_goto(page, page_url, logger_extra=logger_extra)
+        if response.status != 200: return None
+        await page.wait_for_load_state('load')
         return await page_func(page)
-    return await new_page(browser, fn, logger_extra=logger_extra)
+    return await new_page(browser, fn)
 
 
 async def browser_gc(browser, logger_extra=None):
@@ -61,12 +59,12 @@ async def page_goto(page, url, logger_extra=None):
     return response
 
 
-async def catch_playwright_errors(run_fn, retry=True, logger_extra=None):
+async def catch_browser_errors(run_fn, retry=True, logger_extra=None):
     logger_error = sync_to_async(logger.error)
 
     async def retry_fn():
         time.sleep(5)
-        return await catch_playwright_errors(run_fn, retry=False, logger_extra=logger_extra)
+        return await catch_browser_errors(run_fn, retry=False, logger_extra=logger_extra)
 
     retry_msg = ' - Retrying' if retry else ''
     try:
