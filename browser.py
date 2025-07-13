@@ -46,9 +46,9 @@ async def run_on_page(browser, page_url, page_func, logger_extra=None):
 async def browser_gc(browser, logger_extra=None):
     async def run_fn(page):
         return await page.evaluate('if (window.gc) {gc(); true;} else {false;}')
-    gc = await new_page(browser, run_fn, logger_extra=logger_extra)
+    gc = await new_page(browser, run_fn)
     if not gc:
-        logger.warning('Browser gc not available')
+        logger.warning('Browser gc not available', extra=logger_extra)
     return gc
 
 
