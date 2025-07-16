@@ -106,6 +106,9 @@ async def catch_browser_errors(run_fn, retry=True, logger_extra=None):
         if 'connect_over_cdp' in str_e:
             logger.warning(str_e + retry_msg, extra=logger_extra)
             return await retry_fn() if retry else None
+        elif 'Connection closed' in str_e:
+            logger.warning(str_e + retry_msg, extra=logger_extra)
+            return await retry_fn() if retry else None
         else:
             await logger_error(f'Unexpected playwright BaseException - type: {type(e)} - str: {str_e}', extra=logger_extra)
             return None
