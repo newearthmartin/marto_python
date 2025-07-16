@@ -1,4 +1,5 @@
 import re
+import hashlib
 from decimal import Decimal
 from functools import reduce
 from typing import Any, Optional
@@ -95,3 +96,7 @@ def unescape_html_entities(s):
 def first_line(s: str | None) -> str | None:
     if not s: return s
     return s.split('\n')[0]
+
+
+def hash_text(text):
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
