@@ -100,6 +100,9 @@ async def catch_browser_errors(run_fn, retry=True, logger_extra=None):
         elif 'Execution context was destroyed' in str_e:
             logger.warning(str_e + retry_msg, extra=logger_extra)
             return await retry_fn() if retry else None
+        elif 'Timeout' in str_e:
+            logger.warning(str_e, extra=logger_extra)
+            return None
         else:
             await logger_error(f'Unexpected playwright exception - type: {type(e)} - {str_e}', extra=logger_extra)
             return None
