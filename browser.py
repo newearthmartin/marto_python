@@ -3,7 +3,6 @@ import logging
 from django.conf import settings
 from asgiref.sync import sync_to_async
 from playwright.async_api import async_playwright
-from playwright._impl import _errors as playwright_errors
 from marto_python.strings import first_line
 
 
