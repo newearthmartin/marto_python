@@ -9,8 +9,12 @@ from marto_python.strings import first_line
 logger = logging.getLogger(__name__)
 
 
-def get_console_logger(logger_extra=None):
-    return lambda msg: logger.info(f'{msg.type} - {msg.text}', extra=logger_extra)
+def get_console_logger(logger_extra=None, text_blacklist: list[str] | None = None):
+    def fn(msg):
+        if msg.type == 'endGroup': return
+        if text_blacklist and any(t for t in text_blacklist if t in msg.text): return
+        logger.info(f'{msg.type} - {msg.text}', extra=logger_extra)
+    return fn
 
 
 def get_chromium(p, logger_extra=None):
