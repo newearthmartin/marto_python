@@ -9,6 +9,10 @@ from marto_python.strings import first_line
 logger = logging.getLogger(__name__)
 
 
+def console_logger(msg):
+    logger.info(f'{msg.type} - {msg.text}')
+
+
 def get_chromium(p, logger_extra=None):
     chromium_cdp = getattr(settings, 'CHROMIUM_CDP', None)
     if chromium_cdp:
@@ -21,31 +25,32 @@ def get_chromium(p, logger_extra=None):
         return p.chromium.launch(headless=True, executable_path=chromium_path, args=chromium_args)
 
 
-async def new_page(browser, page_func):
+async def new_page(browser, page_func, console_listener=None):
     context = None
     page = None
     try:
         context = await browser.new_context()
         page = await context.new_page()
+        if console_listener: page.on('console', console_listener)
         return await page_func(page)
     finally:
         if page: await page.close()
         if context: await context.close()
 
 
-async def run_on_page(browser, page_url, page_func, logger_extra=None):
+async def run_on_page(browser, page_url, page_func, console_listener=None, logger_extra=None):
     async def fn(page):
         response = await page_goto(page, page_url, logger_extra=logger_extra)
         if response.status != 200: return None
         await page.wait_for_load_state('load')
         return await page_func(page)
-    return await new_page(browser, fn)
+    return await new_page(browser, fn, console_listener=console_listener)
 
 
-async def browser_gc(browser, logger_extra=None):
+async def browser_gc(browser, logger_extra=None, console_listener=None):
     async def run_fn(page):
         return await page.evaluate('if (window.gc) {gc(); true;} else {false;}')
-    gc = await new_page(browser, run_fn)
+    gc = await new_page(browser, run_fn, console_listener=console_listener)
     if not gc:
         logger.warning('Browser gc not available', extra=logger_extra)
     return gc
