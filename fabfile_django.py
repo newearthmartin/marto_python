@@ -100,7 +100,7 @@ def collect_static(c):
     """
     conn = get_prod(c)
     with app_prefix(c, conn):
-        conn.run('python manage.py collectstatic --noinput')
+        conn.run('./manage.py collectstatic --noinput')
 
 
 @task
@@ -111,7 +111,7 @@ def migrate(c):
     conn = get_prod(c)
     with app_prefix(c, conn):
         migrate_apps = c.settings.get('migrate_apps', None)
-        conn.run('python manage.py migrate' + (f' {migrate_apps}' if migrate_apps else ''))
+        conn.run('./manage.py migrate' + (f' {migrate_apps}' if migrate_apps else ''))
 
 
 @task
@@ -224,7 +224,7 @@ def reset_local_db(c):
 def __run_jobs(c, job_type):
     conn = get_prod(c)
     with app_prefix(c, conn):
-        conn.run(f'python manage.py runjobs {job_type}')
+        conn.run(f'./manage.py runjobs {job_type}')
 
 
 @task
