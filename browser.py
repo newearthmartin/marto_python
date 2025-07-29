@@ -9,8 +9,8 @@ from marto_python.strings import first_line
 logger = logging.getLogger(__name__)
 
 
-def console_logger(msg):
-    logger.info(f'{msg.type} - {msg.text}')
+def get_console_logger(logger_extra=None):
+    return lambda msg: logger.info(f'{msg.type} - {msg.text}', extra=logger_extra)
 
 
 def get_chromium(p, logger_extra=None):
