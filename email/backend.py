@@ -5,7 +5,7 @@ import logging
 from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused
 
 from django.conf import settings
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Manager
 from django.utils import timezone
 from django.core.mail.backends.base import BaseEmailBackend
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class DecoratorBackend(BaseEmailBackend):
-    """abstract class for decorators to add functionality to EmailBackend in a decorator pattern"""
+    """Abstract class for decorators to add functionality to EmailBackend in a decorator pattern"""
     inner_backend = None
 
     def __init__(self, *args, **kwargs):
@@ -101,16 +101,12 @@ class DBEmailBackend(DecoratorBackend):
     def send_all(self):
         self.send_queryset(EmailMessage.objects)
 
-    def send_queryset(self, emails_queryset: QuerySet):
-        """
-        sends all emails in the queryset that haven't been sent
-        """
-        self.send_emails(emails_queryset.filter(sent=False).all())
+    def send_queryset(self, emails_qs: QuerySet | Manager):
+        """Sends all emails in the queryset that haven't been sent"""
+        self.send_emails(emails_qs.filter(sent=False).all())
 
     def send_emails(self, emails):
-        """
-        sends all db emails in list.
-        """
+        """Sends all db emails in list."""
         max_today = getattr(settings, 'EMAIL_DB_MAX_DAILY_TOTAL', 2000)
         max_by_subject = getattr(settings, 'EMAIL_DB_MAX_DAILY_BY_SUBJECT', 700)
 
@@ -118,9 +114,7 @@ class DBEmailBackend(DecoratorBackend):
         emails_sent_today = EmailMessage.objects.filter(sent=True).filter(sent_on__gt=yesterday24hs)
         num_emails_sent_today = emails_sent_today.count()
         total_allowed_emails = max_today - num_emails_sent_today
-        logger.debug(f'Sending emails'
-                     f' - already sent {num_emails_sent_today} emails'
-                     f' - can send {total_allowed_emails} more')
+        logger.debug(f'Sending emails - already sent {num_emails_sent_today} - can send {total_allowed_emails} more')
         if total_allowed_emails < 0:
             logger.warning(f'Sent {num_emails_sent_today} emails but only {max_today} were allowed!')
             return
@@ -147,7 +141,7 @@ class DBEmailBackend(DecoratorBackend):
     def do_send(self, emails):
         logger.info(f'sending {len(emails)} emails')
         for email in emails:
-            # using log_fn to prevent infinite loop while sending errors to admins
+            # Using log_fn to prevent infinite loop while sending errors to admins
             # because logger.error creates a new email
             has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
             log_fn = logger.error if not has_admin_emails else logger.warning
