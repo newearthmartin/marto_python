@@ -1,6 +1,7 @@
 import json
 import datetime
 import logging
+import pickle
 
 from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused
 
@@ -67,10 +68,6 @@ class DBEmailBackend(DecoratorBackend):
 
     @staticmethod
     def django_message_to_db_email(message):
-        connection = message.connection
-        message.connection = None
-        dump = json.dumps(message.__dict__)
-        message.connection = connection
         email = EmailMessage()
         email.from_email = message.from_email
         email.subject = message.subject
@@ -79,13 +76,30 @@ class DBEmailBackend(DecoratorBackend):
         email.cc = list2comma_separated(message.cc)
         email.bcc = list2comma_separated(message.bcc)
         email.email_class = get_full_class(message)
-        email.email_dump = dump
+
+        msg_dict = message.__dict__.copy()
+        msg_dict.pop('connection')
+        binary_dict = {}
+        if message.attachments:
+            binary_dict['attachments'] = message.attachments
+            msg_dict.pop('attachments')
+        if message.alternatives:
+            binary_dict['alternatives'] = message.alternatives
+            msg_dict.pop('alternatives')
+        if binary_dict:
+            email.email_dump_binary = pickle.dumps(binary_dict)
+        email.email_dump = json.dumps(msg_dict)
         return email
 
     @staticmethod
     def db_email_to_django_message(email):
+        msg_dict = json.loads(email.email_dump)
+        if email.email_dump_binary:
+            binary_dict = pickle.loads(email.email_dump_binary)
+            if attachments := binary_dict.get('attachments', None): msg_dict['attachments'] = attachments
+            if alternatives := binary_dict.get('alternatives', None): msg_dict['alternatives'] = alternatives
         message = load_class(email.email_class)()
-        message.__dict__ = json.loads(email.email_dump)
+        message.__dict__ = msg_dict
         return message
 
     def send_messages(self, email_messages):
