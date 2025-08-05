@@ -63,9 +63,9 @@ def get_extension(filename):
     return ext[1].lower() if len(ext) == 2 else None
 
 
-def quick_write_json(filename, data):
+def quick_write_json(filename, data, indent=None):
     with open(filename, 'w') as f:
-        f.write(json.dumps(data))
+        f.write(json.dumps(data, indent=indent))
 
 
 def quick_write_bin(filename, data):
