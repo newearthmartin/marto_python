@@ -261,5 +261,5 @@ def monit(c):
     Monit status
     """
     conn = get_prod(c)
-    conn.run('monit')
+    conn.run('monit reload')
     conn.run('monit status')
