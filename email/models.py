@@ -1,24 +1,22 @@
-import random
 from django.db import models
-from django.db.models import Q
 from django.utils.crypto import get_random_string
 from marto_python.email.email import send_email
-
-random.seed()
 
 
 class EmailMessage(models.Model):
     from_email = models.CharField(max_length=512, null=False, blank=False)
-    to = models.TextField(null=True, blank=True)  # comma separated list of recipients
-    cc = models.TextField(null=True, blank=True)  # comma separated list of recipients
-    bcc = models.TextField(null=True, blank=True)  # comma separated list of recipients
+    to = models.TextField(null=True, blank=True)
+    cc = models.TextField(null=True, blank=True)
+    bcc = models.TextField(null=True, blank=True)
     subject = models.CharField(max_length=1024, null=True, blank=True)
     body = models.TextField(null=True, blank=True)
+
     created_on = models.DateTimeField(auto_now_add=True)
     sent = models.BooleanField(default=False, db_index=True)
     sent_on = models.DateTimeField(null=True, blank=True, db_index=True)
     send_successful = models.BooleanField(default=False)
     fail_message = models.CharField(max_length=1024, null=True, blank=True)
+
     email_class = models.CharField(max_length=256)
     email_dump = models.TextField()
 

@@ -132,14 +132,14 @@ class DBEmailBackend(DecoratorBackend):
                 continue
             count += 1
             subjects[subject] = count
-            logger.info(f'sending email - subject: {subject}')
-            logger.debug(f'sending email - ok for sending - updated count {count} - maximum {max_by_subject}')
+            logger.info(f'Sending email - subject: {subject}')
+            logger.debug(f'Sending email - ok for sending - updated count {count} - maximum {max_by_subject}')
             allowed_emails.append(email)
 
         if allowed_emails: self.do_send(allowed_emails)
 
     def do_send(self, emails):
-        logger.info(f'sending {len(emails)} emails')
+        logger.info(f'Sending {len(emails)} emails')
         for email in emails:
             # Using log_fn to prevent infinite loop while sending errors to admins
             # because logger.error creates a new email
@@ -148,7 +148,7 @@ class DBEmailBackend(DecoratorBackend):
 
             # check again if its not sent, for concurrency
             if email.sent:
-                logger.debug(f'email already sent {email.to} - {email.subject}')
+                logger.debug(f'Email already sent {email.to} - {email.subject}')
                 continue
             email_message = DBEmailBackend.db_email_to_django_message(email)
             email.sent = False
