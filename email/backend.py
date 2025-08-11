@@ -103,14 +103,14 @@ class DBEmailBackend(DecoratorBackend):
         return message
 
     def send_messages(self, email_messages):
-        db_emails = list(map(DBEmailBackend.django_message_to_db_email, email_messages))
+        db_emails = [DBEmailBackend.django_message_to_db_email(m) for m in email_messages]
         for email in db_emails:
             email.save()
-        if setting('EMAIL_DB_SEND_IMMEDIATELY', True):
-            logger.debug('sending emails now')
-            self.send_emails(db_emails)
-        else:
-            logger.info(f'stored {len(db_emails)} emails for sending later')
+        if not setting('EMAIL_DB_SEND_IMMEDIATELY', True):
+            logger.info(f'Stored {len(db_emails)} emails for sending later')
+            return
+        logger.debug('Sending emails now')
+        self.send_emails(db_emails)
 
     def send_all(self):
         self.send_queryset(EmailMessage.objects)
@@ -155,43 +155,40 @@ class DBEmailBackend(DecoratorBackend):
     def do_send(self, emails):
         logger.info(f'Sending {len(emails)} emails')
         for email in emails:
-            # Using log_fn to prevent infinite loop while sending errors to admins
+            # Using log_fn to prevent infinite loop when sending errors to admins
             # because logger.error creates a new email
             has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
             log_fn = logger.error if not has_admin_emails else logger.warning
 
-            # check again if its not sent, for concurrency
+            # Check again if it's not sent, for concurrency
+            email.refresh_from_db()
             if email.sent:
                 logger.debug(f'Email already sent {email.to} - {email.subject}')
                 continue
+
             email_message = DBEmailBackend.db_email_to_django_message(email)
-            email.sent = False
-            email.send_successful = False
             try:
                 super().send_messages([email_message])
                 email.send_successful = True
-                email.sent = True
             except SMTPRecipientsRefused as e:
                 email.fail_message = str(e)
-                email.sent = True
                 logger.warning(f'Email recipients refused: {email.to}', exc_info=True)
             except SMTPDataError as e:
                 email.fail_message = str(e)
-                email.sent = True
                 log_fn(f'SMTP data error sending email to {email.to}', exc_info=True)
-            except TypeError as e:
+            except TypeError:
                 log_fn(f'Type error when sending email to {email.to}', exc_info=True)
-                # FIXME: why are we marking this as sent? is it an error with the email? check and mark accordingly
-                # email.fail_message = str(e)
-                # email.sent = True
+                continue
             except (SMTPConnectError, ConnectionResetError, TimeoutError):
                 logger.warning(f'Connection error when sending email to {email.to}', exc_info=True)
+                continue
             except:
-                msg = f'unknown exception sending email to {email.to}'
+                msg = f'Unexpected exception sending email to {email.to}'
                 log_fn(msg, exc_info=True)
-            if email.sent:
-                email.sent_on = timezone.now()
-                email.save()
+                continue
+            email.sent = True
+            email.sent_on = timezone.now()
+            email.save()
         logger.debug(f'sending {len(emails)} emails - finished')
 
 
