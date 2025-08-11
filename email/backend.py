@@ -83,8 +83,8 @@ class DBEmailBackend(DecoratorBackend):
         if message.attachments:
             binary_dict['attachments'] = message.attachments
             msg_dict.pop('attachments')
-        if message.alternatives:
-            binary_dict['alternatives'] = message.alternatives
+        if alternatives := getattr(message, 'alternatives', None):
+            binary_dict['alternatives'] = alternatives
             msg_dict.pop('alternatives')
         if binary_dict:
             email.email_dump_binary = pickle.dumps(binary_dict)
