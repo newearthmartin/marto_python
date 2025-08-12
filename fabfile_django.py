@@ -82,15 +82,19 @@ def push(c):
 
 
 @task
-def pip(c):
+def requirements(c):
     """
-    Install requirements
+    Installs requirements.
+    Defaults to uv. Set uv_not_pip as false to fall back to pip.
     """
-    pip_cmd = getattr(c.settings, 'pip', 'pip')
+    if getattr(c.settings, 'uv_not_pip', True):
+        cmds = ['uv sync --no-dev']
+    else:
+        cmds = ['pip install --upgrade pip', 'pip install -r requirements.txt']
     conn = get_prod(c)
     with app_prefix(c, conn):
-        conn.run(f'{pip_cmd} install --upgrade pip')
-        conn.run(f'{pip_cmd} install -r requirements.txt')
+        for cmd in cmds:
+            conn.run(cmd)
 
 
 @task
@@ -129,6 +133,7 @@ def deploy(c):
     Push, pull, collect static, restart
     """
     push(c)
+    requirements(c)
     collect_static(c)
     migrate(c)
     restart(c)
