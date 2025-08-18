@@ -34,10 +34,12 @@ async def get_tab(window, tab_id):
     return tab
 
 
-async def send(window, tab_id, text, if_not_exists=True):
+async def send(window, tab_id, commands, if_not_exists=True):
     tab = await get_existing_tab(window, tab_id)
     if tab and if_not_exists:
         return tab
     tab = await get_tab(window, tab_id)
+    text = '\n'.join(commands)
+    if text and not text.endswith('\n'): text += '\n'
     await tab.current_session.async_send_text(text)
     return tab
