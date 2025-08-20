@@ -50,6 +50,12 @@ def rsync_cmd(c):
     return cmd
 
 
+@task
+def hello(c):
+    conn = get_prod(c)
+    conn.run('echo hello: `pwd` - `uname -a`')
+
+
 # ############### GIT ################
 
 
