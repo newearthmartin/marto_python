@@ -1,2 +1,2 @@
 #!/bin/bash
-tail -F $1 | ccze -A
+tail -F $1 | logalize
