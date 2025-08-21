@@ -3,6 +3,7 @@ import logging
 from django.conf import settings
 from asgiref.sync import sync_to_async
 from playwright.async_api import async_playwright
+from playwright._impl._errors import Error as PlaywrightError
 from marto_python.strings import first_line
 
 
@@ -46,7 +47,14 @@ async def run_on_page(browser, page_url, page_func, console_listener=None, logge
     async def fn(page):
         response = await page_goto(page, page_url, logger_extra=logger_extra)
         if response.status != 200: return None
-        await page.wait_for_load_state('load')
+        try:
+            await page.wait_for_load_state('load')
+        except BaseException as e:
+            str_e = str(e)
+            if 'net::ERR_BLOCKED_BY_CLIENT' in str_e:
+                logger.warning(f'blocked by client, continuing - {first_line(str_e)}', extra=logger_extra)
+            else:
+                raise e
         return await page_func(page)
     return await new_page(browser, fn, console_listener=console_listener)
 
@@ -62,7 +70,7 @@ async def browser_gc(browser, logger_extra=None, console_listener=None):
 
 async def page_goto(page, url, logger_extra=None):
     logger.info(f'Opening page {url}', extra=logger_extra)
-    response = await page.goto(url, timeout=getattr(settings, 'PLAYWRIGHT_TIMEOUT', None))
+    response = await page.goto(url, wait_until="domcontentloaded", timeout=getattr(settings, 'PLAYWRIGHT_TIMEOUT', None))
     if response.status != 200: logger.warning(f'HTTP status {response.status} on {url}', extra=logger_extra)
     return response
 
