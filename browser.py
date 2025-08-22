@@ -132,7 +132,7 @@ async def catch_browser_errors(run_fn, retry=True, logger_extra=None):
             logger.warning(first_line(str_e), extra=logger_extra)
             return None
         else:
-            await logger_error(f'Unexpected playwright exception - type: {type(e)} - {str_e}', extra=logger_extra)
+            await logger_error(f'Unexpected playwright exception - type: {type(e)} - {str_e}', extra=logger_extra, exc_info=True)
             return None
 
 
