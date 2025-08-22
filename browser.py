@@ -64,19 +64,17 @@ async def browser_gc(browser, logger_extra=None, console_listener=None):
 
 async def page_goto(page, url, logger_extra=None) -> Response:
     logger.info(f'Opening page {url}', extra=logger_extra)
-    response: Response | None = None
 
-    def add_response(r):
-        nonlocal response
-        if r.url == url: response = r
-    page.on("response", add_response)
+    responses = []
+    page.on("response", lambda r: responses.append(r))
 
     try:
-        await page.goto(url, timeout=getattr(settings, 'PLAYWRIGHT_TIMEOUT', None))
+        response = await page.goto(url, timeout=getattr(settings, 'PLAYWRIGHT_TIMEOUT', None))
     except PlaywrightError as e:
         str_e = str(e)
         if 'net::ERR_BLOCKED_BY_CLIENT' in str_e:
             logger.warning(f'Exception but continuing - {first_line(str_e)}', extra=logger_extra)
+            response = next(r for r in reversed(responses) if r.url == page.url)
         else:
             raise e
     if response.status != 200:
