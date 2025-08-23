@@ -49,7 +49,7 @@ async def run_on_page(browser, page_url, page_func, console_listener=None, logge
         response = await page_goto(page, page_url, logger_extra=logger_extra)
         if response.status != 200: return None
         await page.wait_for_load_state('load')
-        return await page_func(page)
+        return await page_func(page) if page_func else None
     return await new_page(browser, fn, console_listener=console_listener)
 
 
