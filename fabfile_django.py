@@ -274,5 +274,6 @@ def monit(c):
     conn = get_prod(c)
     if monitrc := getattr(c.settings, 'monitrc', None):
         conn.run(f'chmod 700 {monitrc}')
+    conn.run('monit')
     conn.run('monit reload')
     conn.run('monit status')
