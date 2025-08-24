@@ -40,9 +40,14 @@ async def new_page(browser, page_func, console_listener=None):
         if console_listener: page.on('console', console_listener)
         return await page_func(page)
     finally:
-        if page: await page.close()
-        if context: await context.close()
-
+        try:
+            if page: await page.close()
+        except:
+            logger.error('Exception while closing page', exc_info=True)
+        try:
+            if context: await context.close()
+        except:
+            logger.error('Exception while closing context', exc_info=True)
 
 async def run_on_page(browser, page_url, page_func, console_listener=None, logger_extra=None):
     async def fn(page):
