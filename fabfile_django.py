@@ -104,6 +104,11 @@ def requirements(c):
 
 
 @task
+def uvlocal(c):
+    get_prod(c).local('uv sync --no-group server')
+
+
+@task
 def collect_static(c):
     """
     Collect static files
