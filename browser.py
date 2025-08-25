@@ -42,12 +42,13 @@ async def new_page(browser, page_func, console_listener=None):
     finally:
         try:
             if page: await page.close()
-        except:
-            logger.error('Exception while closing page', exc_info=True)
+        except BaseException as e:
+            logger.warning(f'Exception while closing page: {first_line(str(e))}')
         try:
             if context: await context.close()
-        except:
-            logger.error('Exception while closing context', exc_info=True)
+        except BaseException as e:
+            logger.warning(f'Exception while closing context: {first_line(str(e))}')
+
 
 async def run_on_page(browser, page_url, page_func, console_listener=None, logger_extra=None):
     async def fn(page):
