@@ -126,7 +126,7 @@ async def catch_browser_errors(run_fn, retry=True, logger_extra=None):
         elif 'Connection closed' in str_e:
             logger.warning(str_e + retry_msg, extra=logger_extra)
             return await retry_fn() if retry else None
-        elif 'Browser.new_context' in str_e:
+        elif 'Browser.new_context' in str_e or 'BrowserContext.new_page' in str_e:
             logger.warning(str_e + retry_msg, extra=logger_extra)
             return await retry_fn() if retry else None
         elif 'BrowserContext.__exit__' in str_e:
