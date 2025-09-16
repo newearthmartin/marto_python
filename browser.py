@@ -100,23 +100,23 @@ async def catch_browser_errors(run_fn, retry=True, logger_extra=None):
     except BaseException as e:
         str_e = getattr(e, 'message', str(e))
         if 'net::ERR_ABORTED' in str_e:
-            logger.warning(f'Browser connection aborted!{retry_msg}', extra=logger_extra)
+            logger.warning('Browser connection aborted!' + retry_msg, extra=logger_extra)
             return await retry_fn() if retry else None
         elif 'net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH' in str_e:
             logger.warning(str_e, extra=logger_extra)
             return None
-        elif 'ECONNREFUSED' in str_e:
-            logger.warning(f'Browser connection refused!{retry_msg}', extra=logger_extra)
-            return await retry_fn() if retry else None
-        # elif 'net::ERR_NETWORK_CHANGED' in str_e:  # TODO: uncomment after new opal is settled
-        #     logger.warning(first_line(str_e) + retry_msg, extra=logger_extra)
-        #     return await retry_fn() if retry else None
+        elif 'net::ERR_ADDRESS_UNREACHABLE' in str_e:
+            logger.warning(str_e, extra=logger_extra)
+            return None
         elif 'net::ERR_NAME_NOT_RESOLVED' in str_e:
             logger.warning(first_line(str_e), extra=logger_extra)
             return None
         elif 'net::ERR_CERT_COMMON_NAME_INVALID' in str_e:
             logger.warning(first_line(str_e), extra=logger_extra)
             return None
+        elif 'ECONNREFUSED' in str_e:
+            logger.warning('Browser connection refused!' + retry_msg, extra=logger_extra)
+            return await retry_fn() if retry else None
         elif 'Target page, context or browser has been closed' in str_e:
             logger.warning(str_e + retry_msg, extra=logger_extra)
             return await retry_fn() if retry else None
