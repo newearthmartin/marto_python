@@ -23,3 +23,7 @@ def redis_lock(lock_name, *args, **kwargs):
 
 def get_redis_key(fn, *args, **kwargs):
     return f'{fn.__module__}.{fn.__name__}-{args}{kwargs}'
+
+
+def get_signature_redis_key(sig):
+    return f'{sig["task"]}-{sig["args"]}{sig["kwargs"]}'
