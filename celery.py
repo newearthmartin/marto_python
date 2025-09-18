@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime, timedelta
 from celery import shared_task, signature
 from celery.utils.log import get_task_logger
@@ -8,7 +9,7 @@ from marto_python.strings import cut_str
 from marto_python.email.email import send_email_to_admins
 
 
-logger = get_task_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @shared_task
