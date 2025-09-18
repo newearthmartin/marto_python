@@ -2,13 +2,16 @@ from django.db import models
 from django.utils.crypto import get_random_string
 from marto_python.email.email import send_email
 
+MAX_FROM_SIZE = 512
+MAX_SUBJECT_SIZE = 1024
+
 
 class EmailMessage(models.Model):
-    from_email = models.CharField(max_length=512, null=False, blank=False)
+    from_email = models.CharField(max_length=MAX_FROM_SIZE, null=False, blank=False)
     to = models.TextField(null=True, blank=True)
     cc = models.TextField(null=True, blank=True)
     bcc = models.TextField(null=True, blank=True)
-    subject = models.CharField(max_length=1024, null=True, blank=True)
+    subject = models.CharField(max_length=MAX_SUBJECT_SIZE, null=True, blank=True)
     body = models.TextField(null=True, blank=True)
 
     created_on = models.DateTimeField(auto_now_add=True)

@@ -10,7 +10,8 @@ from django.db.models import QuerySet, Manager
 from django.utils import timezone
 from django.core.mail.backends.base import BaseEmailBackend
 
-from marto_python.email.models import EmailMessage
+from marto_python.email.models import EmailMessage, MAX_FROM_SIZE, MAX_SUBJECT_SIZE
+from marto_python.strings import cut_str
 from marto_python.util import get_full_class, load_class, setting
 from marto_python.collection_utils import list2comma_separated
 
@@ -69,8 +70,8 @@ class DBEmailBackend(DecoratorBackend):
     @staticmethod
     def django_message_to_db_email(message):
         email = EmailMessage()
-        email.from_email = message.from_email
-        email.subject = message.subject
+        email.from_email = cut_str(message.from_email, MAX_FROM_SIZE)
+        email.subject = cut_str(message.subject, MAX_SUBJECT_SIZE)
         email.body = message.body
         email.to = list2comma_separated(message.to)
         email.cc = list2comma_separated(message.cc)
