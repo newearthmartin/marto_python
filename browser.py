@@ -102,6 +102,9 @@ async def catch_browser_errors(run_fn, retry=True, logger_extra=None):
         if 'net::ERR_ABORTED' in str_e:
             logger.warning('Browser connection aborted!' + retry_msg, extra=logger_extra)
             return await retry_fn() if retry else None
+        elif 'net::ERR_EMPTY_RESPONSE' in str_e:
+            logger.warning(str_e + retry_msg, extra=logger_extra)
+            return await retry_fn() if retry else None
         elif 'net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH' in str_e:
             logger.warning(str_e, extra=logger_extra)
             return None
