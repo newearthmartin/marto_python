@@ -26,11 +26,11 @@ def debounce_task(sig, seconds=60, debounced=False):
     if not debounced or ts is None:
         debounce_ts = timezone.now() + timedelta(seconds=seconds)
         logger.info(f'debounce - waiting {seconds} secs - {log_key}.')
-        redis.set(redis_key, str(debounce_ts.timestamp()))
+        redis.set(redis_key, int(debounce_ts.timestamp()))
         debounce_task.apply_async([sig], {'seconds': seconds, 'debounced': True}, countdown=seconds)
         return
 
-    if timezone.now() < datetime.fromtimestamp(float(ts), tz=timezone.get_current_timezone()):
+    if timezone.now() < datetime.fromtimestamp(int(ts), tz=timezone.get_current_timezone()):
         logger.info(f'debounce - not yet - {log_key}.')
         return
 
