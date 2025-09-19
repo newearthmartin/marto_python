@@ -2,7 +2,6 @@ import json
 import logging
 from datetime import datetime, timedelta
 from celery import shared_task, signature
-from celery.utils.log import get_task_logger
 from django.utils import timezone
 from marto_python.redis import get_redis, get_signature_redis_key
 from marto_python.strings import cut_str
@@ -20,7 +19,6 @@ def debounce_task(sig, seconds=60, debounced=False):
     redis_key = 'debounce.' + get_signature_redis_key(sig)
     log_key = cut_str(redis_key, 200)
     redis = get_redis()
-
     ts = redis.get(redis_key)
 
     if not debounced or ts is None:
