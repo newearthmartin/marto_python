@@ -19,20 +19,25 @@ def debounce_task(sig, seconds=60, debounced=False):
     redis_key = 'debounce.' + get_signature_redis_key(sig)
     log_key = cut_str(redis_key, 200)
     redis = get_redis()
-    ts = redis.get(redis_key)
 
-    if not debounced or ts is None:
-        debounce_ts = timezone.now() + timedelta(seconds=seconds)
-        logger.info(f'debounce - waiting {seconds} secs - {log_key}.')
-        redis.set(redis_key, int(debounce_ts.timestamp()))
-        debounce_task.apply_async([sig], {'seconds': seconds, 'debounced': True}, countdown=seconds)
-        return
+    if seconds != 0:
+        ts = redis.get(redis_key)
 
-    if timezone.now() < datetime.fromtimestamp(int(ts), tz=timezone.get_current_timezone()):
-        logger.info(f'debounce - not yet - {log_key}.')
-        return
+        if not debounced or ts is None:
+            debounce_ts = timezone.now() + timedelta(seconds=seconds)
+            logger.info(f'debounce - waiting {seconds} secs - {log_key}.')
+            redis.set(redis_key, int(debounce_ts.timestamp()))
+            debounce_task.apply_async([sig], {'seconds': seconds, 'debounced': True}, countdown=seconds)
+            return
 
-    logger.info(f'debounce - executing - {log_key}')
+        if timezone.now() < datetime.fromtimestamp(int(ts), tz=timezone.get_current_timezone()):
+            logger.info(f'debounce - not yet - {log_key}.')
+            return
+
+    if seconds == 0:
+        logger.info(f'debounce - seconds is 0 - executing immediately - {log_key}')
+    else:
+        logger.info(f'debounce - executing - {log_key}')
     redis.delete(redis_key)
     signature(sig).apply_async()
 
