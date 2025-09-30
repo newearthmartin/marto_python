@@ -17,7 +17,7 @@ class EmailMessage(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
     sent = models.BooleanField(default=False, db_index=True)
     sent_on = models.DateTimeField(null=True, blank=True, db_index=True)
-    send_successful = models.BooleanField(default=False)
+    send_successful = models.BooleanField(default=False, db_index=True)
     fail_message = models.CharField(max_length=1024, null=True, blank=True)
 
     email_class = models.CharField(max_length=256)
