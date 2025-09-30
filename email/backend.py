@@ -177,6 +177,9 @@ class DBEmailBackend(DecoratorBackend):
             except SMTPDataError as e:
                 email.fail_message = str(e)
                 log_fn(f'SMTP data error sending email to {email.to}', exc_info=True)
+            except ValueError as e:
+                email.fail_message = str(e)
+                log_fn(f'Value error sending email to {email.to}', exc_info=True)
             except TypeError:
                 log_fn(f'Type error when sending email to {email.to}', exc_info=True)
                 continue
