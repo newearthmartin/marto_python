@@ -120,7 +120,7 @@ class DBEmailBackend(DecoratorBackend):
         """Sends all emails in the queryset that haven't been sent"""
         self.send_emails(emails_qs.filter(sent=False).all())
 
-    def send_emails(self, emails):
+    def send_emails(self, emails: list[EmailMessage]):
         """Sends all db emails in list."""
         max_today = getattr(settings, 'EMAIL_DB_MAX_DAILY_TOTAL', 2000)
         max_by_subject = getattr(settings, 'EMAIL_DB_MAX_DAILY_BY_SUBJECT', 700)
