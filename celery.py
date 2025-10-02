@@ -3,6 +3,8 @@ import logging
 from datetime import datetime, timedelta
 from celery import shared_task, signature
 from django.utils import timezone
+from django.conf import settings
+from threading import Thread
 from marto_python.redis import get_redis, get_signature_redis_key
 from marto_python.strings import cut_str
 from marto_python.email.email import send_email_to_admins
@@ -40,6 +42,30 @@ def debounce_task(sig, seconds=60, debounced=False):
         logger.info(f'debounce - executing - {log_key}')
     redis.delete(redis_key)
     signature(sig).apply_async()
+
+
+class CeleryOrThread:
+    """
+    Decorator that
+    - runs the task in celery as delay if USE_CELERY == True
+    - or else runs in thread.
+    """
+    def __init__(self, f):
+        self.f = f
+
+    def sync_call(self, *args, **kwargs):
+        self.f(*args, **kwargs)
+
+    def async_call(self, *args, **kwargs):
+        self.__call__(*args, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        if settings.USE_CELERY:
+            task = self.f.delay(*args, **kwargs)
+            return task
+        else:
+            Thread(target=lambda: self.f(*args, **kwargs)).start()
+            return None
 
 
 @shared_task
