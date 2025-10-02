@@ -28,6 +28,6 @@ def request_param(request_param_dict, param_name, empty_valid=False, default=Non
 
 
 def get_server_url():
-    use_http = hasattr(settings, 'SERVER_NOT_HTTPS') and settings.SERVER_NOT_HTTPS
-    protocol = 'http' if use_http else 'https'
+    use_https = getattr(settings, 'SERVER_USE_HTTPS', True)
+    protocol = 'https' if use_https else 'http'
     return protocol + '://' + Site.objects.get_current().domain
