@@ -202,6 +202,7 @@ def initial_dump(c):
     """
     conn = get_prod(c)
     with app_prefix(c, conn):
+        conn.run('mkdir -p data', hide=True)
         conn.run(f'./manage.py dumpdata {c.settings.dump_initial} --indent=2 > data/initial.json')
 
     scp = scp_cmd(c)
