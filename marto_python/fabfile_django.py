@@ -225,14 +225,20 @@ def reset_local_db(c):
     """
     Resets local db
     """
-    user = c.settings.superuser_user
-    email = c.settings.superuser_mail
     conn = get_prod(c)
     conn.local('rm -f db.sqlite3')
     conn.local('./manage.py migrate')
+    createsuperuser(c)
+    initial_load(c)
+
+
+@task
+def createsuperuser(c):
+    conn = get_prod(c)
+    user = c.settings.superuser_user
+    email = c.settings.superuser_mail
     print('\n\n\nEnter admin password:\n\n\n')
     conn.local(f'./manage.py createsuperuser --username {user} --email {email}', pty=True)
-    initial_load(c)
 
 
 # ############### RUN JOBS ################
