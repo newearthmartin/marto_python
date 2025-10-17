@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from marto_python.email.models import EmailMessage
+from marto_email.models import EmailMessage
 from django.db.models import Q, QuerySet, Manager
 
 

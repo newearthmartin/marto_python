@@ -10,7 +10,7 @@ from django.db.models import QuerySet, Manager
 from django.utils import timezone
 from django.core.mail.backends.base import BaseEmailBackend
 
-from marto_python.email.models import EmailMessage, MAX_FROM_SIZE, MAX_SUBJECT_SIZE
+from marto_email.models import EmailMessage, MAX_FROM_SIZE, MAX_SUBJECT_SIZE
 from marto_python.strings import cut_str
 from marto_python.util import get_full_class, load_class, setting
 from marto_python.collection_utils import list2comma_separated

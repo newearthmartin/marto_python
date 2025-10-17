@@ -1,7 +1,7 @@
 import logging
 from django.core import mail
 from django_extensions.management.jobs import HourlyJob
-from marto_python.email.backend import DBEmailBackend, StackedEmailBackend
+from marto_email.backend import DBEmailBackend, StackedEmailBackend
 logger = logging.getLogger(__name__)
 
 

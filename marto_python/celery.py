@@ -7,7 +7,7 @@ from django.conf import settings
 from threading import Thread
 from marto_python.redis import get_redis, get_signature_redis_key
 from marto_python.strings import cut_str
-from marto_python.email.email import send_email_to_admins
+from marto_email.email import send_email_to_admins
 
 
 logger = logging.getLogger(__name__)

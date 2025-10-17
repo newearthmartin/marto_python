@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.crypto import get_random_string
-from marto_python.email.email import send_email
+from marto_email.email import send_email
 
 MAX_FROM_SIZE = 512
 MAX_SUBJECT_SIZE = 1024
