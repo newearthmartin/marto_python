@@ -3,6 +3,7 @@ import re
 from urllib.parse import urlparse
 from django.conf import settings
 from django.contrib.sites.models import Site
+from django.core.validators import URLValidator, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -31,3 +32,12 @@ def get_server_url():
     use_https = getattr(settings, 'SERVER_USE_HTTPS', True)
     protocol = 'https' if use_https else 'http'
     return protocol + '://' + Site.objects.get_current().domain
+
+
+def validate_domain(domain):
+    if '://' in domain: return False
+    try:
+        URLValidator()(f'https://{domain}')
+    except ValidationError as e:
+        return False
+    return True
