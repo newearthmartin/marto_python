@@ -210,6 +210,15 @@ def initial_dump(c):
 
 
 @task
+def initial_dump_local(c):
+    """
+    Dump initial data from local, adding accounts
+    """
+    conn = get_prod(c)
+    conn.local(f'./manage.py dumpdata {c.settings.dump_initial_local} --indent=2 > data/initial_local.json')
+
+
+@task
 def initial_load(c):
     """
     Load initial data on local computer
