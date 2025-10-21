@@ -289,3 +289,15 @@ def monit(c):
     conn.run('monit')
     conn.run('monit reload')
     conn.run('monit status')
+
+
+# ############### FRONTEND ################
+
+
+@task
+def frontend_build(c):
+    """
+    Build frontend
+    """
+    conn = get_prod(c)
+    conn.local(c.settings.frontend_build, echo=False)
