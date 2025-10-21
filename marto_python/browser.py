@@ -99,47 +99,25 @@ async def catch_browser_errors(run_fn, retry=True, logger_extra=None):
         return await run_fn()
     except BaseException as e:
         str_e = getattr(e, 'message', str(e))
-        if 'net::ERR_ABORTED' in str_e:
-            logger.warning('Browser connection aborted!' + retry_msg, extra=logger_extra)
-            return await retry_fn() if retry else None
-        elif 'net::ERR_EMPTY_RESPONSE' in str_e:
+        if any(e in str_e for e in ['net::ERR_ABORTED',
+                                    'net::ERR_EMPTY_RESPONSE',
+                                    'net::ERR_NETWORK_CHANGED',
+                                    'Target page, context or browser has been closed',
+                                    'connect_over_cdp',
+                                    'Connection closed',
+                                    'Browser.new_context',
+                                    'BrowserContext.new_page',
+                                    'BrowserContext.__exit__',
+                                    'Execution context was destroyed',
+                                    'ECONNREFUSED']):
             logger.warning(str_e + retry_msg, extra=logger_extra)
             return await retry_fn() if retry else None
-        elif 'net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH' in str_e:
+        elif any(e in str_e for e in ['net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH'
+                                      'net::ERR_ADDRESS_UNREACHABLE',
+                                      'net::ERR_NAME_NOT_RESOLVED',
+                                      'net::ERR_CERT_COMMON_NAME_INVALID',
+                                      'Timeout']):
             logger.warning(str_e, extra=logger_extra)
-            return None
-        elif 'net::ERR_ADDRESS_UNREACHABLE' in str_e:
-            logger.warning(str_e, extra=logger_extra)
-            return None
-        elif 'net::ERR_NAME_NOT_RESOLVED' in str_e:
-            logger.warning(first_line(str_e), extra=logger_extra)
-            return None
-        elif 'net::ERR_CERT_COMMON_NAME_INVALID' in str_e:
-            logger.warning(first_line(str_e), extra=logger_extra)
-            return None
-        elif 'ECONNREFUSED' in str_e:
-            logger.warning('Browser connection refused!' + retry_msg, extra=logger_extra)
-            return await retry_fn() if retry else None
-        elif 'Target page, context or browser has been closed' in str_e:
-            logger.warning(str_e + retry_msg, extra=logger_extra)
-            return await retry_fn() if retry else None
-        elif 'connect_over_cdp' in str_e:
-            logger.warning(str_e + retry_msg, extra=logger_extra)
-            return await retry_fn() if retry else None
-        elif 'Connection closed' in str_e:
-            logger.warning(str_e + retry_msg, extra=logger_extra)
-            return await retry_fn() if retry else None
-        elif 'Browser.new_context' in str_e or 'BrowserContext.new_page' in str_e:
-            logger.warning(str_e + retry_msg, extra=logger_extra)
-            return await retry_fn() if retry else None
-        elif 'BrowserContext.__exit__' in str_e:
-            logger.warning(str_e + retry_msg, extra=logger_extra)
-            return await retry_fn() if retry else None
-        elif 'Execution context was destroyed' in str_e:
-            logger.warning(str_e + retry_msg, extra=logger_extra)
-            return await retry_fn() if retry else None
-        elif 'Timeout' in str_e:
-            logger.warning(first_line(str_e), extra=logger_extra)
             return None
         else:
             await logger_error(f'Unexpected playwright exception - type: {type(e)} - {str_e}', extra=logger_extra, exc_info=True)
