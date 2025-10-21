@@ -207,6 +207,8 @@ def initial_dump(c):
 
     scp = scp_cmd(c)
     conn.local(f'{scp} {app_ssh_path(c)}/data/initial.json data')
+    with app_prefix(c, conn):
+        conn.run('git checkout -- data/initial.json', hide=True)
 
 
 @task
