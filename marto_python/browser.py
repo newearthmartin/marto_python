@@ -112,7 +112,7 @@ async def catch_browser_errors(run_fn, retry=True, logger_extra=None):
                                     'ECONNREFUSED']):
             logger.warning(str_e + retry_msg, extra=logger_extra)
             return await retry_fn() if retry else None
-        elif any(e in str_e for e in ['net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH'
+        elif any(e in str_e for e in ['net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH',
                                       'net::ERR_ADDRESS_UNREACHABLE',
                                       'net::ERR_NAME_NOT_RESOLVED',
                                       'net::ERR_CERT_COMMON_NAME_INVALID',
