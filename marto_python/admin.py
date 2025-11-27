@@ -70,6 +70,5 @@ class CachedFieldListFilter(SimpleListFilter):
         return queryset
 
 
-
 def register_admin(clazz: type[Model], admin_class: type[ModelAdmin] = None):
     admin.site.register(clazz, admin_class if admin_class else clazz.Admin)
