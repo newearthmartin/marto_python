@@ -13,6 +13,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 from .collection_utils import add_list_elem
 
@@ -95,6 +96,15 @@ def is_valid_email(email: str) -> bool:
         return True
     except forms.ValidationError:
         return False
+
+
+def validate_field(o, field):
+    try:
+        o.full_clean()
+        return True, None
+    except ValidationError as e:
+        field_msg = getattr(e, 'message_dict', {}).get(field, None)
+        return False, field_msg or str(e)
 
 
 def is_function(obj) -> bool:
