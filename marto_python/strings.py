@@ -64,8 +64,12 @@ def cut_str(s: str, length: int, full=False) -> str:
     return s
 
 
-def str_if(val: Optional[Any], default_value: Optional[str] = None) -> Optional[str]:
-    return str(val) if val else default_value
+def str_if(val: Optional[Any], default_value: Optional[str] = None, strip=False) -> Optional[str]:
+    if val:
+        val = str(val)
+        if strip:
+            val = val.strip()
+    return val or default_value
 
 
 def left_pad(s: str, total_digits: int, with_char: str = '0') -> str:
