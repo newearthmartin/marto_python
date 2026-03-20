@@ -50,8 +50,10 @@ async def new_page(browser, page_func, console_listener=None):
             logger.warning(f'Exception while closing context: {first_line(str(e))}')
 
 
-async def run_on_page(browser, page_url, page_func, console_listener=None, logger_extra=None):
+async def run_on_page(browser, page_url, page_func, console_listener=None, log_console=False, logger_extra=None):
     async def fn(page):
+        if log_console:
+            page.on("console", lambda msg: logger.info(f"[console.{msg.type}] {msg.text}", extra=logger_extra))
         response = await page_goto(page, page_url, logger_extra=logger_extra)
         if response.status != 200: return None
         content_type = response.headers.get('content-type', '').lower()
