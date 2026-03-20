@@ -106,6 +106,7 @@ async def catch_browser_errors(run_fn, retry=True, logger_extra=None):
         if any(e in str_e for e in ['net::ERR_ABORTED',
                                     'net::ERR_EMPTY_RESPONSE',
                                     'net::ERR_NETWORK_CHANGED',
+                                    'net::ERR_CONNECTION_REFUSED',
                                     'Target page, context or browser has been closed',
                                     'connect_over_cdp',
                                     'Connection closed',
