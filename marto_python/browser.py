@@ -35,7 +35,7 @@ async def new_page(browser, page_func, console_listener=None):
     context = None
     page = None
     try:
-        context = await browser.new_context()
+        context = await browser.new_context(bypass_csp=True)
         page = await context.new_page()
         if console_listener: page.on('console', console_listener)
         return await page_func(page)
