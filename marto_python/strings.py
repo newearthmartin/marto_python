@@ -64,6 +64,12 @@ def cut_str(s: str, length: int, full=False) -> str:
     return s
 
 
+def arrow(a: Optional[str], b: str, lena: Optional[int] = None, lenb: Optional[int] = None) -> str:
+    if lena is not None and a: a = cut_str(a, lena)
+    if lenb is not None: b = cut_str(b, lenb)
+    return f'{a} -> {b}' if a else b
+
+
 def str_if(val: Optional[Any], default_value: Optional[str] = None, strip=False) -> Optional[str]:
     if val:
         val = str(val)
