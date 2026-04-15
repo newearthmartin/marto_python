@@ -3,18 +3,12 @@ from playwright.async_api import async_playwright
 from django.conf import settings
 from django.http import HttpResponse
 
+from marto_python.browser import AsyncBrowserManager, new_page, catch_browser_errors
 
 logger = logging.getLogger(__name__)
 
 
-async def render_to_pdf(html, pdf_out_file, pdf_options=None):
-    chromium_path = getattr(settings, 'CHROMIUM_PATH', None)
-    chromium_args = getattr(settings, 'CHROMIUM_ARGS', None)
-    
-    launch_options = {'headless': True}
-    if chromium_path: launch_options['executable_path'] = chromium_path
-    if chromium_args: launch_options['args'] = chromium_args
-
+async def render_to_pdf(html, pdf_out_file, pdf_options=None, logger_extra=None):
     default_options = {
         'format': 'A4',
         'margin': {
@@ -27,18 +21,15 @@ async def render_to_pdf(html, pdf_out_file, pdf_options=None):
     }
     pdf_options = default_options | (pdf_options or {})
 
-    playwright = await async_playwright().start()
-    browser = None
-    page = None
-    try:
-        browser = await playwright.chromium.launch(**launch_options)
-        page = await browser.new_page()
+    async def make_pdf(page):
         await page.set_content(html, wait_until='networkidle')
         await page.pdf(path=pdf_out_file, **pdf_options)
-    finally:
-        if page: await page.close()
-        if browser: await browser.close()
-        await playwright.stop()
+
+    async with AsyncBrowserManager() as browser_manager:
+        async def fn():
+            browser = await browser_manager.get_browser(logger_extra=logger_extra)
+            await new_page(browser, make_pdf)
+        await catch_browser_errors(fn, logger_extra=logger_extra)
 
 
 def pdf_response(pdf_filename, contents):
