@@ -1,6 +1,4 @@
 import logging
-from playwright.async_api import async_playwright
-from django.conf import settings
 from django.http import HttpResponse
 
 from marto_python.browser import AsyncBrowserManager, new_page, catch_browser_errors
@@ -8,7 +6,7 @@ from marto_python.browser import AsyncBrowserManager, new_page, catch_browser_er
 logger = logging.getLogger(__name__)
 
 
-async def render_to_pdf(html, pdf_out_file, pdf_options=None, logger_extra=None):
+async def render_to_pdf(html, pdf_options=None, logger_extra=None) -> bytes:
     default_options = {
         'format': 'A4',
         'margin': {
@@ -23,13 +21,13 @@ async def render_to_pdf(html, pdf_out_file, pdf_options=None, logger_extra=None)
 
     async def make_pdf(page):
         await page.set_content(html, wait_until='networkidle')
-        await page.pdf(path=pdf_out_file, **pdf_options)
+        return await page.pdf(**pdf_options)
 
     async with AsyncBrowserManager() as browser_manager:
         async def fn():
             browser = await browser_manager.get_browser(logger_extra=logger_extra)
-            await new_page(browser, make_pdf)
-        await catch_browser_errors(fn, logger_extra=logger_extra)
+            return await new_page(browser, make_pdf)
+        return await catch_browser_errors(fn, logger_extra=logger_extra)
 
 
 def pdf_response(pdf_filename, contents):
