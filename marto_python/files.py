@@ -40,9 +40,14 @@ def read_lines(f, remove_empty=False):
     return lines
 
 
+def has_file(file_field, check_exists=False):
+    if not (file_field and file_field.name): return False
+    return not check_exists or file_field.storage.exists(file_field.name)
+
+
 def get_extension(filename):
-    parts = filename.split('.')
-    return parts[-1].lower()
+    parts = filename.rsplit('.', maxsplit=1)
+    return parts[1].lower() if len(parts) == 2 else None
 
 
 def random_filename(prefix, extension):
@@ -56,11 +61,6 @@ def read_static_file(path):
     path = finders.find(path)
     with open(path) as f:
         return f.read()
-
-
-def get_extension(filename):
-    ext = filename.rsplit('.', maxsplit=1)
-    return ext[1].lower() if len(ext) == 2 else None
 
 
 def quick_write_json(filename, data, indent=None):
