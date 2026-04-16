@@ -1,13 +1,14 @@
 import json
 import logging
 from datetime import datetime, timedelta
+
 from celery import shared_task, signature
 from django.utils import timezone
+from django.core.mail import EmailMessage
 from django.conf import settings
 from threading import Thread
 from marto_python.redis import get_redis, get_signature_redis_key
 from marto_python.strings import cut_str
-from marto_email.email import send_email_to_admins
 
 
 logger = logging.getLogger(__name__)
@@ -83,4 +84,8 @@ def hola_error():
 
 @shared_task
 def test_mail():
-    send_email_to_admins('Testing email from celery task', 'Email message body')
+    EmailMessage(
+        'Testing email from celery task',
+        'Email message body',
+        to=[email for _, email in settings.ADMINS]
+    ).send()

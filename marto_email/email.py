@@ -34,6 +34,6 @@ def send_email(to, subject, template_file, context_dict, sender=settings.DEFAULT
 
 
 def send_email_to_admins(subject, email_html):
-    admin_emails = map(lambda e: e[1], settings.ADMINS)
+    admin_emails = [email for _, email in settings.ADMINS]
     send(admin_emails, subject, email_html)
 
