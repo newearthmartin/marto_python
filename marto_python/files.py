@@ -17,7 +17,11 @@ class OverwriteStorage(FileSystemStorage):
         Found at http://djangosnippets.org/snippets/976/
         """
         if self.exists(name):
-            os.remove(os.path.join(settings.MEDIA_ROOT, name))
+            try:
+                self.delete(name)
+            except FileNotFoundError:
+                # Another task/process may have already removed the file after exists() returned True.
+                pass
         return name
 
 
