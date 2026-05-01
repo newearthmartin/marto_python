@@ -41,3 +41,8 @@ def validate_domain(domain):
     except ValidationError as e:
         return False
     return True
+
+
+def is_ajax(request):
+    return 'application/json' in request.headers.get('Accept', '') or \
+        request.headers.get('X-Requested-With') == 'XMLHttpRequest'
