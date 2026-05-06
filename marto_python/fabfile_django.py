@@ -115,7 +115,9 @@ def collect_static(c):
     """
     conn = get_prod(c)
     with app_prefix(c, conn):
-        conn.run('./manage.py collectstatic --noinput')
+        collect_static_env = c.settings.get('collect_static_env', None)
+        collect_static_env = (collect_static_env + ' ') if collect_static_env else ''
+        conn.run(collect_static_env + './manage.py collectstatic --noinput')
 
 
 @task
@@ -126,7 +128,8 @@ def migrate(c):
     conn = get_prod(c)
     with app_prefix(c, conn):
         migrate_apps = c.settings.get('migrate_apps', None)
-        conn.run('./manage.py migrate' + (f' {migrate_apps}' if migrate_apps else ''))
+        migrate_apps = (' ' + migrate_apps) if migrate_apps else ''
+        conn.run('./manage.py migrate' + migrate_apps)
 
 
 @task
