@@ -28,6 +28,17 @@ def flatten(iterable: Iterable) -> Iterable:
     return (e2 for e1 in iterable for e2 in e1)
 
 
+def offset_limit(lst, offset=0, limit=0):
+    if offset and limit:
+        return lst[offset:offset + limit]
+    elif offset:
+        return lst[offset:]
+    elif limit:
+        return lst[:limit]
+    else:
+        return lst
+
+
 def to_list(dct: dict, sort_by_key: bool = False, sorting_key_fn: Optional[Callable] = None):
     lst = list(dct.items())
     if sort_by_key:
