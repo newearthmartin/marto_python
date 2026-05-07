@@ -1,8 +1,18 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter, ModelAdmin
 from django.core.cache import caches
+from django.core.paginator import Paginator
 from django.db.models import Model, QuerySet
+from django.utils.functional import cached_property
 from .util import is_function
+
+
+class NoCountPaginator(Paginator):
+    """Paginator that skips the COUNT(*) query — use on admins where the count is too expensive."""
+
+    @cached_property
+    def count(self):
+        return 9999999999
 
 
 def foreign_field(field_name):
