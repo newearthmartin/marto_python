@@ -1,6 +1,7 @@
 import time
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime, timezone as dt_timezone
 from enum import StrEnum
 from typing import Any
 from django.conf import settings
@@ -30,10 +31,28 @@ class FetchResult:
     value: Any = None
     error: BrowserFetchError | None = None
     http_status: int | None = None
+    timestamp: datetime = field(default_factory=lambda: datetime.now(dt_timezone.utc))
 
     @property
     def ok(self) -> bool:
         return self.error is None
+
+    def to_dict(self) -> dict:
+        return {
+            'value': self.value,
+            'error': self.error.value if self.error else None,
+            'http_status': self.http_status,
+            'timestamp': int(self.timestamp.timestamp()),
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> 'FetchResult':
+        return cls(
+            value=d.get('value'),
+            error=BrowserFetchError(d['error']) if d.get('error') else None,
+            http_status=d.get('http_status'),
+            timestamp=datetime.fromtimestamp(d['timestamp'], tz=dt_timezone.utc),
+        )
 
 
 def get_console_logger(logger_extra=None, text_blacklist: list[str] | None = None):
