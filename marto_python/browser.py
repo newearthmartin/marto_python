@@ -1,5 +1,8 @@
 import time
 import logging
+from dataclasses import dataclass
+from enum import StrEnum
+from typing import Any
 from django.conf import settings
 from asgiref.sync import sync_to_async
 from playwright.async_api import async_playwright
@@ -9,6 +12,28 @@ from marto_python.strings import first_line
 
 
 logger = logging.getLogger(__name__)
+
+
+class BrowserFetchError(StrEnum):
+    HTTP_4XX = 'http_4xx'                        # 4xx (except 429) — page not reachable / forbidden / gone
+    HTTP_5XX = 'http_5xx'                        # 5xx — server error
+    TOO_MANY_REQUESTS = 'too_many_requests'      # 429 — transient, treated separately from 4xx
+    TIMEOUT = 'timeout'                          # navigation/operation timed out
+    NETWORK = 'network'                          # DNS / SSL / cert / address unreachable / connection refused
+    BROWSER_CRASH = 'browser_crash'              # browser/context/CDP died
+    UNSUPPORTED_CONTENT = 'unsupported_content'  # response wasn't text/html
+    UNEXPECTED_ERROR = 'unexpected_error'        # unclassified exception
+
+
+@dataclass
+class FetchResult:
+    value: Any = None
+    error: BrowserFetchError | None = None
+    http_status: int | None = None
+
+    @property
+    def ok(self) -> bool:
+        return self.error is None
 
 
 def get_console_logger(logger_extra=None, text_blacklist: list[str] | None = None):
@@ -50,18 +75,29 @@ async def new_page(browser, page_func, console_listener=None):
             logger.warning(f'Exception while closing context: {first_line(str(e))}')
 
 
-async def run_on_page(browser, page_url, page_func, console_listener=None, log_console=False, logger_extra=None):
+async def run_on_page(browser, page_url, page_func, console_listener=None, log_console=False, logger_extra=None) -> FetchResult:
     async def fn(page):
         if log_console:
             page.on("console", lambda msg: logger.info(f"[console.{msg.type}] {msg.text}", extra=logger_extra))
         response = await page_goto(page, page_url, logger_extra=logger_extra)
-        if response.status != 200: return None
+        status = response.status
+        if status != 200:
+            if status == 429:
+                error = BrowserFetchError.TOO_MANY_REQUESTS
+            elif 400 <= status < 500:
+                error = BrowserFetchError.HTTP_4XX
+            elif 500 <= status < 600:
+                error = BrowserFetchError.HTTP_5XX
+            else:
+                error = BrowserFetchError.NETWORK
+            return FetchResult(error=error, http_status=status)
         content_type = response.headers.get('content-type', '').lower()
         if 'text/html' not in content_type:
             logger.warning(f'Content type {content_type} not supported')
-            return None
+            return FetchResult(error=BrowserFetchError.UNSUPPORTED_CONTENT, http_status=status)
         await page.wait_for_load_state('load')
-        return await page_func(page) if page_func else None
+        value = await page_func(page) if page_func else None
+        return FetchResult(value=value, http_status=status)
     return await new_page(browser, fn, console_listener=console_listener)
 
 
@@ -94,41 +130,55 @@ async def page_goto(page, url, logger_extra=None) -> Response:
     return response
 
 
-async def catch_browser_errors(run_fn, retry=True, logger_extra=None):
-    async def retry_fn():
+BROWSER_CRASH_MARKERS = [
+    'net::ERR_ABORTED',
+    'net::ERR_EMPTY_RESPONSE',
+    'net::ERR_NETWORK_CHANGED',
+    'net::ERR_CONNECTION_REFUSED',
+    'Target page, context or browser has been closed',
+    'connect_over_cdp',
+    'Connection closed',
+    'Browser.new_context',
+    'BrowserContext.new_page',
+    'BrowserContext.__exit__',
+    'Execution context was destroyed',
+    'ECONNREFUSED',
+]
+NETWORK_MARKERS = [
+    'net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH',
+    'net::ERR_ADDRESS_UNREACHABLE',
+    'net::ERR_NAME_NOT_RESOLVED',
+    'net::ERR_CERT_COMMON_NAME_INVALID',
+]
+
+
+def __wrap_result(result) -> FetchResult:
+    return result if isinstance(result, FetchResult) else FetchResult(value=result)
+
+
+async def catch_browser_errors(run_fn, retry=True, logger_extra=None) -> FetchResult:
+    async def retry_fn() -> FetchResult:
         time.sleep(5)
         return await catch_browser_errors(run_fn, retry=False, logger_extra=logger_extra)
 
     retry_msg = ' - Retrying' if retry else ''
     logger_error = sync_to_async(logger.error)
     try:
-        return await run_fn()
+        return __wrap_result(await run_fn())
     except BaseException as e:
         str_e = getattr(e, 'message', str(e))
-        if any(e in str_e for e in ['net::ERR_ABORTED',
-                                    'net::ERR_EMPTY_RESPONSE',
-                                    'net::ERR_NETWORK_CHANGED',
-                                    'net::ERR_CONNECTION_REFUSED',
-                                    'Target page, context or browser has been closed',
-                                    'connect_over_cdp',
-                                    'Connection closed',
-                                    'Browser.new_context',
-                                    'BrowserContext.new_page',
-                                    'BrowserContext.__exit__',
-                                    'Execution context was destroyed',
-                                    'ECONNREFUSED']):
+        if any(m in str_e for m in BROWSER_CRASH_MARKERS):
             logger.warning(str_e + retry_msg, extra=logger_extra)
-            return await retry_fn() if retry else None
-        elif any(e in str_e for e in ['net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH',
-                                      'net::ERR_ADDRESS_UNREACHABLE',
-                                      'net::ERR_NAME_NOT_RESOLVED',
-                                      'net::ERR_CERT_COMMON_NAME_INVALID',
-                                      'Timeout']):
+            return await retry_fn() if retry else FetchResult(error=BrowserFetchError.BROWSER_CRASH)
+        elif 'Timeout' in str_e:
             logger.warning(str_e, extra=logger_extra)
-            return None
+            return FetchResult(error=BrowserFetchError.TIMEOUT)
+        elif any(m in str_e for m in NETWORK_MARKERS):
+            logger.warning(str_e, extra=logger_extra)
+            return FetchResult(error=BrowserFetchError.NETWORK)
         else:
             await logger_error(f'Unexpected playwright exception - type: {type(e)} - {str_e}', extra=logger_extra, exc_info=True)
-            return None
+            return FetchResult(error=BrowserFetchError.UNEXPECTED_ERROR)
 
 
 class AsyncBrowserManager:

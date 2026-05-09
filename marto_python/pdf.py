@@ -27,7 +27,10 @@ async def render_to_pdf(html, pdf_options=None, logger_extra=None) -> bytes:
         async def fn():
             browser = await browser_manager.get_browser(logger_extra=logger_extra)
             return await new_page(browser, make_pdf)
-        return await catch_browser_errors(fn, logger_extra=logger_extra)
+        result = await catch_browser_errors(fn, logger_extra=logger_extra)
+        if not result.ok:
+            logger.error(f'render_to_pdf failed - {result.error}', extra=logger_extra)
+        return result.value
 
 
 def pdf_response(pdf_filename, contents):
