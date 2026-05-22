@@ -50,9 +50,16 @@ def none_then_empty(string: Optional[str]) -> str:
     return string if string else ''
 
 
+ZERO_WIDTH_REGEX = re.compile(r'[\u200B\u200C\u200D\uFEFF]')
+WHITESPACE_REGEX = re.compile(r'\s+')
+
+
 def remove_zw(string: str) -> str:
-    return string.replace('\u200B', '') \
-                 .replace('\u200C', '')
+    return ZERO_WIDTH_REGEX.sub('', string)
+
+
+def whitespace_to_space(string: str):
+    return re.sub(WHITESPACE_REGEX, ' ', string)
 
 
 def cut_str(s: str, length: int, full=False) -> str:
