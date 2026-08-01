@@ -75,11 +75,13 @@ def get_chromium(p, logger_extra=None):
         return p.chromium.launch(headless=True, executable_path=chromium_path, args=chromium_args)
 
 
-async def new_page(browser, page_func, console_listener=None):
+async def new_page(browser, page_func, console_listener=None, grant_permissions=None):
     context = None
     page = None
     try:
         context = await browser.new_context(bypass_csp=True)
+        if grant_permissions:
+            await context.grant_permissions(grant_permissions)
         page = await context.new_page()
         if console_listener: page.on('console', console_listener)
         return await page_func(page)
@@ -94,10 +96,12 @@ async def new_page(browser, page_func, console_listener=None):
             logger.warning(f'Exception while closing context: {first_line(str(e))}')
 
 
-async def run_on_page(browser, page_url, page_func, console_listener=None, log_console=False, logger_extra=None) -> FetchResult:
+async def run_on_page(browser, page_url, page_func, console_listener=None, log_console=False,
+                      log_console_only_error=False, logger_extra=None, grant_permissions=None) -> FetchResult:
     async def fn(page):
         if log_console:
-            page.on("console", lambda msg: logger.info(f"[console.{msg.type}] {msg.text}", extra=logger_extra))
+            page.on("console", lambda msg: logger.info(f"[console.{msg.type}] {msg.text}", extra=logger_extra)
+                     if not log_console_only_error or msg.type == 'error' else None)
         response = await page_goto(page, page_url, logger_extra=logger_extra)
         status = response.status
         if status != 200:
@@ -117,7 +121,7 @@ async def run_on_page(browser, page_url, page_func, console_listener=None, log_c
         await page.wait_for_load_state('load')
         value = await page_func(page) if page_func else None
         return FetchResult(value=value, http_status=status)
-    return await new_page(browser, fn, console_listener=console_listener)
+    return await new_page(browser, fn, console_listener=console_listener, grant_permissions=grant_permissions)
 
 
 async def browser_gc(browser, logger_extra=None, console_listener=None):
