@@ -6,18 +6,26 @@ from redlock.lock import RedLockFactory
 __redis = None
 __redlock_factory = None
 
+DEFAULT_REDIS_PORT = 6379
+DEFAULT_REDIS_DB = 0
+
 
 def get_redis():
     global __redis
     if not __redis:
-        __redis = Redis(port=settings.REDIS_PORT)
+        __redis = Redis(
+            port=getattr(settings, 'REDIS_PORT', DEFAULT_REDIS_PORT),
+            db=getattr(settings, 'REDIS_DB', DEFAULT_REDIS_DB))
     return __redis
 
 
 def redis_lock(lock_name, *args, **kwargs):
     global __redlock_factory
     if not __redlock_factory:
-        __redlock_factory = RedLockFactory([{'host': 'localhost', 'port': settings.REDIS_PORT}])
+        __redlock_factory = RedLockFactory([{
+            'host': 'localhost',
+            'port': getattr(settings, 'REDIS_PORT', DEFAULT_REDIS_PORT),
+            'db': getattr(settings, 'REDIS_DB', DEFAULT_REDIS_DB)}])
     return __redlock_factory.create_lock(lock_name, *args, **kwargs)
 
 
