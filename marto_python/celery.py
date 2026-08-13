@@ -34,10 +34,10 @@ def track_task_view(request):
     return JsonResponse(response)
 
 
-def track_task_loop(task_id):
+def track_task_loop(task_id, max_seconds=MAX_TRACK_SECONDS):
     task = AsyncResult(task_id)
     now = datetime.now()
-    while (datetime.now() - now).seconds < MAX_TRACK_SECONDS:
+    while (datetime.now() - now).seconds < max_seconds:
         if task.successful():
             return task.get()
         elif task.failed():
