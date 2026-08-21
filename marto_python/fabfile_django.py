@@ -293,6 +293,15 @@ def celery(c):
 
 
 @task
+def install_configs(c):
+    """
+    Install/update opalstack systemd units, monitrc and crontab
+    """
+    conn = get_prod(c)
+    conn.run(c.settings.install_configs_script)
+
+
+@task
 def monit(c):
     """
     Monit status
