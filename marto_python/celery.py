@@ -103,7 +103,7 @@ def debounce_task(sig, seconds=60, debounced=False):
             return
 
     if seconds == 0:
-        logger.info(f'debounce - seconds is 0 - executing immediately - {log_key}')
+        logger.debug(f'debounce - seconds is 0 - executing immediately - {log_key}')
     else:
         logger.info(f'debounce - executing - {log_key}')
     redis.delete(redis_key)
