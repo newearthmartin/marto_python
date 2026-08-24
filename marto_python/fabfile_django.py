@@ -142,7 +142,7 @@ def restart(c):
 
 
 @task
-def deploy(c):
+def deploy_django(c):
     """
     Push, pull, collect static, restart
     """
