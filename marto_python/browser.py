@@ -232,8 +232,14 @@ class AsyncBrowserManager:
 
     async def close(self):
         if self.browser:
-            await self.browser.close()
+            try:
+                await self.browser.close()
+            except BaseException as e:
+                logger.warning(f'Exception while closing browser: {first_line(str(e))}')
             self.browser = None
         if self.playwright:
-            await self.playwright.stop()
+            try:
+                await self.playwright.stop()
+            except BaseException as e:
+                logger.warning(f'Exception while stopping playwright: {first_line(str(e))}')
             self.playwright = None
