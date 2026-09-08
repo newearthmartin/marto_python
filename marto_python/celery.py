@@ -110,6 +110,37 @@ def debounce_task(sig, seconds=60, debounced=False):
     signature(sig).apply_async()
 
 
+def throttle_task(sig, seconds=60):
+    """Run `sig` at most once per `seconds`, and always run it.
+
+    The difference from debounce_task: a call arriving while a run is already pending is dropped,
+    rather than pushing the pending run further out. Debouncing is right for a burst that ends -
+    but a caller that keeps firing (visitor traffic, a polling loop) postpones a debounced task
+    forever, and enqueues another delayed task each time it does. Here the first caller claims the
+    window and schedules the run at the end of it, so everything that arrives during the window is
+    covered by that one run and costs nothing.
+
+    Returns True if this call claimed the window.
+    """
+    if type(sig) is not dict:  # same signature in the sync and async call, as debounce_task does
+        sig = json.loads(json.dumps(sig))
+
+    log_key = cut_str('throttle.' + get_signature_redis_key(sig), 200)
+    if seconds == 0:
+        logger.debug(f'throttle - seconds is 0 - executing immediately - {log_key}')
+        signature(sig).apply_async()
+        return True
+
+    # The key expires when the run is due, so the next caller after that opens a fresh window.
+    if not get_redis().set('throttle.' + get_signature_redis_key(sig), 1, nx=True, ex=seconds):
+        logger.debug(f'throttle - already scheduled - {log_key}')
+        return False
+
+    logger.info(f'throttle - running in {seconds} secs - {log_key}')
+    signature(sig).apply_async(countdown=seconds)
+    return True
+
+
 class CeleryOrThread:
     """
     Decorator that
