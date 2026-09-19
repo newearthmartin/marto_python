@@ -23,6 +23,7 @@ class BrowserFetchError(StrEnum):
     NETWORK = 'network'                          # DNS / SSL / cert / address unreachable / connection refused
     BROWSER_CRASH = 'browser_crash'              # browser/context/CDP died
     UNSUPPORTED_CONTENT = 'unsupported_content'  # response wasn't text/html
+    CODE_TAMPERED = 'code_tampered'               # our injected code detected it was tampered with / blocked
     UNEXPECTED_ERROR = 'unexpected_error'        # unclassified exception
 
 
@@ -175,6 +176,12 @@ NETWORK_MARKERS = [
     'net::ERR_CERT_AUTHORITY_INVALID',
     'net::ERR_TOO_MANY_REDIRECTS',
 ]
+# Raised deliberately by our own injected scripts (e.g. common_ml's setup.js) when they detect
+# they've been tampered with or otherwise blocked from running properly - not a bug in our code,
+# so it's worth telling apart from UNEXPECTED_ERROR rather than alerting on it every time.
+CODE_TAMPERED_MARKERS = [
+    'ML_TAMPERED',
+]
 
 
 def __wrap_result(result) -> FetchResult:
@@ -201,6 +208,9 @@ async def catch_browser_errors(run_fn, retry=True, logger_extra=None) -> FetchRe
         elif any(m in str_e for m in NETWORK_MARKERS):
             logger.warning(str_e, extra=logger_extra)
             return FetchResult(error=BrowserFetchError.NETWORK)
+        elif any(m in str_e for m in CODE_TAMPERED_MARKERS):
+            logger.warning(str_e, extra=logger_extra)
+            return FetchResult(error=BrowserFetchError.CODE_TAMPERED)
         else:
             await logger_error(f'Unexpected playwright exception - type: {type(e)} - {str_e}', extra=logger_extra, exc_info=True)
             return FetchResult(error=BrowserFetchError.UNEXPECTED_ERROR)
