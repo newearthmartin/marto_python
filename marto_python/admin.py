@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.admin import SimpleListFilter, ModelAdmin
 from django.core.cache import caches
 from django.core.paginator import Paginator
-from django.db.models import Model, QuerySet
+from django.db.models import Model, Q, QuerySet
 from django.utils.functional import cached_property
 from .util import is_function
 
@@ -28,6 +28,66 @@ def foreign_field(field_name):
 
 
 ff = foreign_field
+
+
+class TextInputFilter(SimpleListFilter):
+    """
+    A free-text box in the filter sidebar instead of a list of choices - for fields with too
+    many values to enumerate (a domain, an email, an id). Subclasses implement filter_value(),
+    which only ever sees a non-empty value.
+
+    The template lives in this app (admin/text_input_filter.html), so a project only has to
+    have marto_python in INSTALLED_APPS.
+    """
+    template = 'admin/text_input_filter.html'
+    placeholder = ''
+
+    def lookups(self, request, model_admin):
+        return ()
+
+    def has_output(self):
+        return True
+
+    def filter_value(self, value, queryset) -> QuerySet:
+        raise NotImplementedError
+
+    def queryset(self, request, queryset) -> QuerySet:
+        value = (self.value() or '').strip()
+        return self.filter_value(value, queryset) if value else queryset
+
+    def choices(self, changelist):
+        # the box keeps the other active filters, so typing in it narrows rather than replaces
+        query_parts = []
+        for key, value in changelist.params.items():
+            if key in {self.parameter_name, 'p'}:
+                continue
+            if isinstance(value, (list, tuple)):
+                query_parts.extend((key, item) for item in value)
+            else:
+                query_parts.append((key, value))
+        yield {
+            'query_parts': query_parts,
+            'value': self.value() or '',
+            'clear_query_string': changelist.get_query_string(remove=[self.parameter_name]),
+        }
+
+
+class FieldsTextInputFilter(TextInputFilter):
+    """Matches what was typed against any of `fields` (icontains)."""
+    fields = ()
+    distinct = False
+
+    def filter_value(self, value, queryset):
+        q = Q()
+        for field in self.fields:
+            q |= Q(**{f'{field}__icontains': value})
+        queryset = queryset.filter(q)
+        return queryset.distinct() if self.distinct else queryset
+
+
+def text_input_filter_class(name, base=FieldsTextInputFilter, **attrs):
+    """A filter class per admin, since a SimpleListFilter carries its fields on the class."""
+    return type(name, (base,), attrs)
 
 
 class YesNoFilter(SimpleListFilter):

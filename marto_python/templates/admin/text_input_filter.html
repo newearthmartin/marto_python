@@ -1,0 +1,18 @@
+{% load i18n %}
+<h3>{{ title }}</h3>
+<ul>
+  <li>
+    <form method="get">
+      {% for choice in choices %}
+        {% for key, value in choice.query_parts %}
+          <input type="hidden" name="{{ key }}" value="{{ value }}">
+        {% endfor %}
+        <input type="text" size="14" name="{{ spec.parameter_name }}" value="{{ choice.value }}" placeholder="{{ spec.placeholder }}">
+        <button type="submit">{% trans 'Filter' %}</button>
+        {% if choice.value %}
+          <a href="{{ choice.clear_query_string }}">{% trans 'Clear' %}</a>
+        {% endif %}
+      {% endfor %}
+    </form>
+  </li>
+</ul>
