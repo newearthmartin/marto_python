@@ -173,6 +173,7 @@ BROWSER_CRASH_MARKERS = [
 ]
 NETWORK_MARKERS = [
     'net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH',
+    'net::ERR_SSL_UNRECOGNIZED_NAME_ALERT',
     'net::ERR_ADDRESS_UNREACHABLE',
     'net::ERR_NAME_NOT_RESOLVED',
     'net::ERR_CERT_COMMON_NAME_INVALID',
@@ -207,10 +208,10 @@ async def catch_browser_errors(run_fn, retry=True, logger_extra=None) -> FetchRe
             logger.warning(str_e + retry_msg, extra=logger_extra)
             return await retry_fn() if retry else FetchResult(error=BrowserFetchError.BROWSER_CRASH)
         elif 'Timeout' in str_e:
-            logger.warning(str_e, extra=logger_extra)
+            logger.warning(first_line(str_e), extra=logger_extra)
             return FetchResult(error=BrowserFetchError.TIMEOUT)
         elif any(m in str_e for m in NETWORK_MARKERS):
-            logger.warning(str_e, extra=logger_extra)
+            logger.warning(first_line(str_e), extra=logger_extra)
             return FetchResult(error=BrowserFetchError.NETWORK)
         elif any(m in str_e for m in CODE_TAMPERED_MARKERS):
             logger.warning(str_e, extra=logger_extra)
