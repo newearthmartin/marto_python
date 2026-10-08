@@ -1,4 +1,4 @@
-import time
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone as dt_timezone
@@ -190,7 +190,7 @@ def __wrap_result(result) -> FetchResult:
 
 async def catch_browser_errors(run_fn, retry=True, logger_extra=None) -> FetchResult:
     async def retry_fn() -> FetchResult:
-        time.sleep(5)
+        await asyncio.sleep(5)
         return await catch_browser_errors(run_fn, retry=False, logger_extra=logger_extra)
 
     retry_msg = ' - Retrying' if retry else ''
@@ -227,7 +227,14 @@ class AsyncBrowserManager:
     async def get_browser(self, logger_extra=None):
         await self.__check_browser(logger_extra=logger_extra)
         if not self.playwright: self.playwright = await async_playwright().start()
-        if not self.browser: self.browser = await get_chromium(self.playwright, logger_extra=logger_extra)
+        if not self.browser:
+            try:
+                self.browser = await get_chromium(self.playwright, logger_extra=logger_extra)
+            except BaseException:
+                # A failed CDP connection may leave the Playwright driver unusable. The
+                # caller retries through this manager, so start a fresh driver next time.
+                await self.close()
+                raise
         return self.browser
 
     async def __check_browser(self, logger_extra=None):
