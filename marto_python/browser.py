@@ -177,6 +177,7 @@ NETWORK_MARKERS = [
     'net::ERR_NAME_NOT_RESOLVED',
     'net::ERR_CERT_COMMON_NAME_INVALID',
     'net::ERR_CERT_AUTHORITY_INVALID',
+    'net::ERR_CERT_DATE_INVALID',
     'net::ERR_TOO_MANY_REDIRECTS',
 ]
 # Raised deliberately by our own injected scripts (e.g. common_ml's setup.js) when they detect
