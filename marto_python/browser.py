@@ -80,7 +80,10 @@ async def new_page(browser, page_func, console_listener=None, grant_permissions=
     context = None
     page = None
     try:
-        context = await browser.new_context(bypass_csp=True)
+        # Fetched pages do not need persistent service workers. In a shared CDP browser,
+        # an orphan worker without browserContextId makes Playwright's attach handler
+        # assert and kills each newly connected driver.
+        context = await browser.new_context(bypass_csp=True, service_workers='block')
         if grant_permissions:
             await context.grant_permissions(grant_permissions)
         page = await context.new_page()
