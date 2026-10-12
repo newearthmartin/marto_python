@@ -3,7 +3,7 @@ import datetime
 import logging
 import pickle
 
-from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused
+from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused, SMTPServerDisconnected
 
 from django.conf import settings
 from django.db.models import QuerySet, Manager
@@ -153,8 +153,37 @@ class DBEmailBackend(DecoratorBackend):
 
         if allowed_emails: self.do_send(allowed_emails)
 
+    def _reopen_connection(self):
+        """(Re)opens the inner connection so a batch reuses it; if it can't, each send opens its own."""
+        try:
+            self.close()
+        except Exception:
+            logger.debug('Error closing email connection', exc_info=True)
+        try:
+            self.open()
+        except Exception:
+            logger.warning('Could not open email connection, sending will open one per email', exc_info=True)
+
+    def _send_message(self, email_message):
+        try:
+            super().send_messages([email_message])
+        except (SMTPServerDisconnected, ConnectionResetError, BrokenPipeError):
+            # the shared connection went stale: reconnect and retry this email once
+            self._reopen_connection()
+            super().send_messages([email_message])
+
     def do_send(self, emails):
         logger.info(f'Sending {len(emails)} emails')
+        self._reopen_connection()
+        try:
+            self._do_send(emails)
+        finally:
+            try:
+                self.close()
+            except Exception:
+                logger.debug('Error closing email connection', exc_info=True)
+
+    def _do_send(self, emails):
         for email in emails:
             # Using log_fn to prevent infinite loop when sending errors to admins
             # because logger.error creates a new email
@@ -169,7 +198,7 @@ class DBEmailBackend(DecoratorBackend):
 
             email_message = DBEmailBackend.db_email_to_django_message(email)
             try:
-                super().send_messages([email_message])
+                self._send_message(email_message)
                 email.send_successful = True
             except SMTPRecipientsRefused as e:
                 email.fail_message = str(e)
@@ -185,10 +214,12 @@ class DBEmailBackend(DecoratorBackend):
                 continue
             except (SMTPConnectError, ConnectionResetError, TimeoutError):
                 logger.warning(f'Connection error when sending email to {email.to}', exc_info=True)
+                self._reopen_connection()
                 continue
             except Exception:
                 msg = f'Unexpected exception sending email to {email.to}'
                 log_fn(msg, exc_info=True)
+                self._reopen_connection()
                 continue
             email.sent = True
             email.sent_on = timezone.now()
