@@ -120,8 +120,8 @@ class DBEmailBackend(DecoratorBackend):
         """Sends all emails in the queryset that haven't been sent"""
         self.send_emails(emails_qs.filter(sent=False).all())
 
-    def send_emails(self, emails: list[EmailMessage]):
-        """Sends all db emails in list."""
+    def send_emails(self, emails: QuerySet | list[EmailMessage]):
+        """Sends all db emails in the list/queryset, loading them from the db in batches (see EMAIL_DB_BATCH_SIZE)."""
         max_today = getattr(settings, 'EMAIL_DB_MAX_DAILY_TOTAL', 2000)
         max_by_subject = getattr(settings, 'EMAIL_DB_MAX_DAILY_BY_SUBJECT', 700)
 
@@ -134,13 +134,17 @@ class DBEmailBackend(DecoratorBackend):
             logger.warning(f'Sent {num_emails_sent_today} emails but only {max_today} were allowed!')
             return
 
-        allowed_emails = []
+        # only ids and subjects are held for all emails; bodies are loaded one batch at a time
+        if isinstance(emails, QuerySet):
+            id_subjects = emails.order_by('id').values_list('id', 'subject')
+        else:
+            id_subjects = [(email.id, email.subject) for email in emails]
+        allowed_ids = []
         subjects = {}
-        for email in emails:
-            if len(allowed_emails) >= total_allowed_emails:
+        for email_id, subject in id_subjects:
+            if len(allowed_ids) >= total_allowed_emails:
                 logger.warning('reached maximum total emails')
                 break
-            subject = email.subject
             count = subjects[subject] if subject in subjects else emails_sent_today.filter(subject=subject).count()
             logger.debug(f'Already sent {count} (maximum {max_by_subject}) for subject "{subject}"')
             if count >= max_by_subject:
@@ -149,9 +153,12 @@ class DBEmailBackend(DecoratorBackend):
             subjects[subject] = count
             logger.info(f'Sending email - subject: {subject}')
             logger.debug(f'Sending email - ok for sending - updated count {count} - maximum {max_by_subject}')
-            allowed_emails.append(email)
+            allowed_ids.append(email_id)
 
-        if allowed_emails: self.do_send(allowed_emails)
+        batch_size = getattr(settings, 'EMAIL_DB_BATCH_SIZE', 200)
+        for i in range(0, len(allowed_ids), batch_size):
+            batch_ids = allowed_ids[i:i + batch_size]
+            self.do_send(list(EmailMessage.objects.filter(id__in=batch_ids).order_by('id')))
 
     def _reopen_connection(self):
         """(Re)opens the inner connection so a batch reuses it; if it can't, each send opens its own."""

@@ -104,3 +104,10 @@ class DoSendConnectionTest(TestCase):
         self.assertEqual(2, FakeSMTPBackend.opened)
         self.assertEqual(5, len(FakeSMTPBackend.sent))
         self.assertEqual(5, models.EmailMessage.objects.filter(sent=True).count())
+
+    def test_emails_are_loaded_and_sent_in_batches(self):
+        with self.settings(EMAIL_DB_BATCH_SIZE=2):
+            self.send_all(5)
+        self.assertEqual(3, FakeSMTPBackend.opened)  # 2 + 2 + 1, one connection per batch
+        self.assertEqual(5, len(FakeSMTPBackend.sent))
+        self.assertEqual(5, models.EmailMessage.objects.filter(sent=True).count())
