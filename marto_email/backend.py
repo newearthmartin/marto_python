@@ -186,7 +186,7 @@ class DBEmailBackend(DecoratorBackend):
             except (SMTPConnectError, ConnectionResetError, TimeoutError):
                 logger.warning(f'Connection error when sending email to {email.to}', exc_info=True)
                 continue
-            except:
+            except Exception:
                 msg = f'Unexpected exception sending email to {email.to}'
                 log_fn(msg, exc_info=True)
                 continue
