@@ -6,6 +6,7 @@ import pickle
 from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused, SMTPServerDisconnected
 
 from django.conf import settings
+from django.db import transaction
 from django.db.models import QuerySet, Manager
 from django.utils import timezone
 from django.core.mail.backends.base import BaseEmailBackend
@@ -200,42 +201,47 @@ class DBEmailBackend(DecoratorBackend):
             has_admin_emails = [e for e in settings.ADMINS if e[1].lower() == email.to.lower()]
             log_fn = logger.error if not has_admin_emails else logger.warning
 
-            # Check again if it's not sent, for concurrency
-            email.refresh_from_db()
-            if email.sent:
-                logger.debug(f'Email already sent {email.to} - {email.subject}')
-                continue
-
-            logger.info(f'Sending email {email.id} - subject: {email.subject}')
-            email_message = DBEmailBackend.db_email_to_django_message(email)
-            try:
-                self._send_message(email_message)
-                email.send_successful = True
-            except SMTPRecipientsRefused as e:
-                email.fail_message = str(e)
-                logger.warning(f'Email recipients refused: {email.to}', exc_info=True)
-            except SMTPDataError as e:
-                email.fail_message = str(e)
-                log_fn(f'SMTP data error sending email to {email.to}', exc_info=True)
-            except ValueError as e:
-                email.fail_message = str(e)
-                log_fn(f'Value error sending email to {email.to}', exc_info=True)
-            except TypeError:
-                log_fn(f'Type error when sending email to {email.to}', exc_info=True)
-                continue
-            except (SMTPConnectError, ConnectionResetError, TimeoutError):
-                logger.warning(f'Connection error when sending email to {email.to}', exc_info=True)
-                self._reopen_connection()
-                continue
-            except Exception:
-                msg = f'Unexpected exception sending email to {email.to}'
-                log_fn(msg, exc_info=True)
-                self._reopen_connection()
-                continue
-            email.sent = True
-            email.sent_on = timezone.now()
-            email.save()
+            # Lock the row while sending, so another worker can't send it too: it skips rows
+            # that are locked (being sent) or already sent
+            with transaction.atomic():
+                locked = EmailMessage.objects.select_for_update(skip_locked=True).filter(pk=email.pk, sent=False).first()
+                if locked is None:
+                    logger.debug(f'Email {email.id} already sent or being sent by another process')
+                    continue
+                self._send_locked(locked, log_fn)
         logger.debug(f'sending {len(emails)} emails - finished')
+
+    def _send_locked(self, email, log_fn):
+        """Sends one email whose row is locked, and marks it sent."""
+        logger.info(f'Sending email {email.id} - subject: {email.subject}')
+        email_message = DBEmailBackend.db_email_to_django_message(email)
+        try:
+            self._send_message(email_message)
+            email.send_successful = True
+        except SMTPRecipientsRefused as e:
+            email.fail_message = str(e)
+            logger.warning(f'Email recipients refused: {email.to}', exc_info=True)
+        except SMTPDataError as e:
+            email.fail_message = str(e)
+            log_fn(f'SMTP data error sending email to {email.to}', exc_info=True)
+        except ValueError as e:
+            email.fail_message = str(e)
+            log_fn(f'Value error sending email to {email.to}', exc_info=True)
+        except TypeError:
+            log_fn(f'Type error when sending email to {email.to}', exc_info=True)
+            return
+        except (SMTPConnectError, ConnectionResetError, TimeoutError):
+            logger.warning(f'Connection error when sending email to {email.to}', exc_info=True)
+            self._reopen_connection()
+            return
+        except Exception:
+            msg = f'Unexpected exception sending email to {email.to}'
+            log_fn(msg, exc_info=True)
+            self._reopen_connection()
+            return
+        email.sent = True
+        email.sent_on = timezone.now()
+        email.save()
 
 
 class FilteringEmailBackend(DecoratorBackend):

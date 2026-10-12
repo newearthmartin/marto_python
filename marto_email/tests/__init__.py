@@ -111,3 +111,15 @@ class DoSendConnectionTest(TestCase):
         self.assertEqual(3, FakeSMTPBackend.opened)  # 2 + 2 + 1, one connection per batch
         self.assertEqual(5, len(FakeSMTPBackend.sent))
         self.assertEqual(5, models.EmailMessage.objects.filter(sent=True).count())
+
+    def test_row_sent_meanwhile_by_another_process_is_skipped(self):
+        FakeSMTPBackend.reset()
+        with self.settings(EMAIL_BACKEND='marto_email.backend.StackedEmailBackend',
+                           EMAIL_DB_SEND_IMMEDIATELY=False,
+                           EMAIL_BACKEND_STACK=[f'{__name__}.FakeSMTPBackend', 'marto_email.backend.DBEmailBackend']):
+            for i in range(3):
+                EmailMultiAlternatives('s', 'b', 'a@x.com', [f'u{i}@x.com']).send()
+            emails = list(models.EmailMessage.objects.order_by('id'))
+            models.EmailMessage.objects.filter(pk=emails[1].pk).update(sent=True)  # "the other process"
+            DBEmailBackend.instance.send_emails(emails)
+        self.assertEqual(['u0@x.com', 'u2@x.com'], FakeSMTPBackend.sent)
