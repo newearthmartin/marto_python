@@ -114,15 +114,19 @@ class DBEmailBackend(DecoratorBackend):
         logger.debug('Sending emails now')
         self.send_emails(db_emails)
 
-    def send_all(self):
-        self.send_queryset(EmailMessage.objects)
+    def send_all(self, dispatch=None):
+        self.send_queryset(EmailMessage.objects, dispatch)
 
-    def send_queryset(self, emails_qs: QuerySet | Manager):
+    def send_queryset(self, emails_qs: QuerySet | Manager, dispatch=None):
         """Sends all emails in the queryset that haven't been sent"""
-        self.send_emails(emails_qs.filter(sent=False).all())
+        self.send_emails(emails_qs.filter(sent=False).all(), dispatch)
 
-    def send_emails(self, emails: QuerySet | list[EmailMessage]):
-        """Sends all db emails in the list/queryset, loading them from the db in batches (see EMAIL_DB_BATCH_SIZE)."""
+    def send_emails(self, emails: QuerySet | list[EmailMessage], dispatch=None):
+        """
+        Sends all db emails in the list/queryset, loading them from the db in batches (see EMAIL_DB_BATCH_SIZE).
+        With `dispatch` (a callable taking a list of email ids), when there is more than one batch to send,
+        each batch is handed to it instead of being sent here, e.g. to queue it as a celery task.
+        """
         max_today = getattr(settings, 'EMAIL_DB_MAX_DAILY_TOTAL', 2000)
         max_by_subject = getattr(settings, 'EMAIL_DB_MAX_DAILY_BY_SUBJECT', 700)
 
@@ -157,6 +161,11 @@ class DBEmailBackend(DecoratorBackend):
 
         batch_size = getattr(settings, 'EMAIL_DB_BATCH_SIZE', 200)
         logger.info(f'{len(allowed_ids)} emails to send, in batches of {batch_size}')
+        if dispatch and len(allowed_ids) > batch_size:
+            for i in range(0, len(allowed_ids), batch_size):
+                dispatch(allowed_ids[i:i + batch_size])
+            logger.info(f'Dispatched {len(allowed_ids)} emails in batches of {batch_size}')
+            return
         for i in range(0, len(allowed_ids), batch_size):
             batch_ids = allowed_ids[i:i + batch_size]
             self.do_send(list(EmailMessage.objects.filter(id__in=batch_ids).order_by('id')))
