@@ -151,14 +151,17 @@ class DBEmailBackend(DecoratorBackend):
                 continue
             count += 1
             subjects[subject] = count
-            logger.info(f'Sending email - subject: {subject}')
             logger.debug(f'Sending email - ok for sending - updated count {count} - maximum {max_by_subject}')
             allowed_ids.append(email_id)
 
         batch_size = getattr(settings, 'EMAIL_DB_BATCH_SIZE', 200)
+        logger.info(f'{len(allowed_ids)} emails to send, in batches of {batch_size}')
         for i in range(0, len(allowed_ids), batch_size):
             batch_ids = allowed_ids[i:i + batch_size]
             self.do_send(list(EmailMessage.objects.filter(id__in=batch_ids).order_by('id')))
+            sent_in_batch = EmailMessage.objects.filter(id__in=batch_ids, sent=True).count()
+            logger.info(f'Batch done: {sent_in_batch}/{len(batch_ids)} sent - '
+                        f'{min(i + batch_size, len(allowed_ids))}/{len(allowed_ids)} processed')
 
     def _reopen_connection(self):
         """(Re)opens the inner connection so a batch reuses it; if it can't, each send opens its own."""
@@ -203,6 +206,7 @@ class DBEmailBackend(DecoratorBackend):
                 logger.debug(f'Email already sent {email.to} - {email.subject}')
                 continue
 
+            logger.info(f'Sending email {email.id} - subject: {email.subject}')
             email_message = DBEmailBackend.db_email_to_django_message(email)
             try:
                 self._send_message(email_message)
