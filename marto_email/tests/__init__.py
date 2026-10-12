@@ -44,6 +44,7 @@ class FakeSMTPBackend(BaseEmailBackend):
     """Counts connections like Django's SMTP backend: send_messages opens (and then closes) one only if none is open."""
     opened = 0
     sent = []
+    users = set()  # ids of the instances that sent
     disconnect_on = set()  # indexes (1-based) of send attempts that raise SMTPServerDisconnected
 
     def __init__(self, *args, **kwargs):
@@ -54,6 +55,7 @@ class FakeSMTPBackend(BaseEmailBackend):
     def reset(cls, disconnect_on=()):
         cls.opened = 0
         cls.sent = []
+        cls.users = set()
         cls.attempts = 0
         cls.disconnect_on = set(disconnect_on)
 
@@ -76,6 +78,7 @@ class FakeSMTPBackend(BaseEmailBackend):
                     self.connection = None
                     raise SMTPServerDisconnected('stale')
                 type(self).sent.append(m.to[0])
+                type(self).users.add(id(self))
         finally:
             if new_conn_created:
                 self.close()
@@ -123,3 +126,9 @@ class DoSendConnectionTest(TestCase):
             models.EmailMessage.objects.filter(pk=emails[1].pk).update(sent=True)  # "the other process"
             DBEmailBackend.instance.send_emails(emails)
         self.assertEqual(['u0@x.com', 'u2@x.com'], FakeSMTPBackend.sent)
+
+    def test_each_batch_sends_through_its_own_connection(self):
+        self.send_all(3)
+        shared = DBEmailBackend.instance.inner_backend
+        self.assertNotIn(id(shared), FakeSMTPBackend.users)  # threads share this one, so it must stay unused
+        self.assertIsNone(shared.connection)

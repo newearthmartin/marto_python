@@ -1,3 +1,4 @@
+import copy
 import json
 import datetime
 import logging
@@ -192,14 +193,30 @@ class DBEmailBackend(DecoratorBackend):
             self._reopen_connection()
             super().send_messages([email_message])
 
+    @staticmethod
+    def _private_backend(backend):
+        """A copy of the backend chain with its own (not yet open) connection."""
+        if backend is None:
+            return None
+        clone = copy.copy(backend)
+        if hasattr(clone, 'connection'):
+            clone.connection = None
+        if isinstance(clone, DecoratorBackend):
+            clone.inner_backend = DBEmailBackend._private_backend(clone.inner_backend)
+        return clone
+
     def do_send(self, emails):
         logger.info(f'Sending {len(emails)} emails')
-        self._reopen_connection()
+        # The instance is shared by all threads of a process (celery runs threaded workers) and an SMTP
+        # connection can't be used by two threads at once, so each batch sends through its own connection.
+        sender = copy.copy(self)
+        sender.inner_backend = DBEmailBackend._private_backend(self.inner_backend)
+        sender._reopen_connection()
         try:
-            self._do_send(emails)
+            sender._do_send(emails)
         finally:
             try:
-                self.close()
+                sender.close()
             except Exception:
                 logger.debug('Error closing email connection', exc_info=True)
 
