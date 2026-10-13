@@ -4,7 +4,8 @@ import datetime
 import logging
 import pickle
 
-from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused, SMTPServerDisconnected
+from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused, SMTPResponseException, \
+    SMTPServerDisconnected
 
 from django.conf import settings
 from django.db import transaction
@@ -192,6 +193,12 @@ class DBEmailBackend(DecoratorBackend):
             # the shared connection went stale: reconnect and retry this email once
             self._reopen_connection()
             super().send_messages([email_message])
+        except SMTPResponseException as e:
+            if e.smtp_code != 421:
+                raise
+            # 421: the server is closing the connection (e.g. "timeout exceeded"): reconnect and retry once
+            self._reopen_connection()
+            super().send_messages([email_message])
 
     @staticmethod
     def _private_backend(backend):
@@ -247,7 +254,17 @@ class DBEmailBackend(DecoratorBackend):
         except SMTPRecipientsRefused as e:
             email.fail_message = str(e)
             logger.warning(f'Email recipients refused: {email.to}', exc_info=True)
-        except SMTPDataError as e:
+        except SMTPResponseException as e:
+            if 400 <= e.smtp_code < 500:
+                # temporary error (e.g. 421 timeout): leave the email unsent so a later run tries it again
+                logger.warning(f'Temporary SMTP error {e.smtp_code} sending email to {email.to}, will retry later',
+                               exc_info=True)
+                self._reopen_connection()
+                return
+            if not isinstance(e, SMTPDataError):
+                log_fn(f'Unexpected exception sending email to {email.to}', exc_info=True)
+                self._reopen_connection()
+                return
             email.fail_message = str(e)
             log_fn(f'SMTP data error sending email to {email.to}', exc_info=True)
         except ValueError as e:

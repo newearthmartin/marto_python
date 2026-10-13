@@ -1,5 +1,5 @@
 import os
-from smtplib import SMTPServerDisconnected
+from smtplib import SMTPDataError, SMTPSenderRefused, SMTPServerDisconnected
 from django.core.mail.backends.base import BaseEmailBackend
 from django.core.mail import EmailMultiAlternatives
 from django.test import TestCase
@@ -45,6 +45,7 @@ class FakeSMTPBackend(BaseEmailBackend):
     opened = 0
     sent = []
     users = set()  # ids of the instances that sent
+    errors = {}  # 1-based send attempt -> exception to raise
     disconnect_on = set()  # indexes (1-based) of send attempts that raise SMTPServerDisconnected
 
     def __init__(self, *args, **kwargs):
@@ -52,7 +53,8 @@ class FakeSMTPBackend(BaseEmailBackend):
         self.connection = None
 
     @classmethod
-    def reset(cls, disconnect_on=()):
+    def reset(cls, disconnect_on=(), errors=None):
+        cls.errors = errors or {}
         cls.opened = 0
         cls.sent = []
         cls.users = set()
@@ -74,6 +76,8 @@ class FakeSMTPBackend(BaseEmailBackend):
         try:
             for m in email_messages:
                 type(self).attempts += 1
+                if type(self).attempts in self.errors:
+                    raise self.errors[type(self).attempts]
                 if type(self).attempts in self.disconnect_on:
                     self.connection = None
                     raise SMTPServerDisconnected('stale')
@@ -132,3 +136,24 @@ class DoSendConnectionTest(TestCase):
         shared = DBEmailBackend.instance.inner_backend
         self.assertNotIn(id(shared), FakeSMTPBackend.users)  # threads share this one, so it must stay unused
         self.assertIsNone(shared.connection)
+
+    def states(self):
+        return [(e.sent, e.send_successful) for e in models.EmailMessage.objects.filter(subject='s').order_by('id')]
+
+    def test_421_reconnects_and_retries_once(self):
+        self.send_all(3, errors={2: SMTPDataError(421, b'4.4.2 timeout exceeded')})
+        self.assertEqual(3, len(FakeSMTPBackend.sent))
+        self.assertEqual([(True, True)] * 3, self.states())
+
+    def test_temporary_error_leaves_email_unsent(self):
+        self.send_all(3, errors={2: SMTPDataError(450, b'mailbox busy')})
+        self.assertEqual(2, len(FakeSMTPBackend.sent))
+        self.assertEqual([(True, True), (False, False), (True, True)], self.states())
+
+    def test_temporary_sender_refused_leaves_email_unsent(self):
+        self.send_all(3, errors={2: SMTPSenderRefused(452, b'try later', 'a@x.com')})
+        self.assertEqual([(True, True), (False, False), (True, True)], self.states())
+
+    def test_permanent_data_error_marks_email_failed(self):
+        self.send_all(3, errors={2: SMTPDataError(554, b'rejected')})
+        self.assertEqual([(True, True), (True, False), (True, True)], self.states())
