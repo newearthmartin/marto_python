@@ -169,6 +169,7 @@ BROWSER_CRASH_MARKERS = [
     'BrowserContext.new_page',
     'BrowserContext.__exit__',
     'Execution context was destroyed',
+    'Frame was detached',
     'ECONNREFUSED',
 ]
 NETWORK_MARKERS = [
