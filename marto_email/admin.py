@@ -7,7 +7,7 @@ from tinymce.widgets import TinyMCE
 from marto_python.admin import YesNoFilter
 from .management.commands.clean_error_emails import filter_error_emails
 from .models import EmailMessage
-from .backend import DBEmailBackend
+from .backend import DBEmailBackend, default_connection
 
 
 class EmailMessageAdminForm(forms.ModelForm):
@@ -43,7 +43,8 @@ class EmailMessageAdmin(ModelAdmin):
         for email in queryset.all():
             if email.sent and not email.send_successful:
                 email.clear_sent()
-        DBEmailBackend().send_queryset(queryset)
+        default_connection()  # creates the DBEmailBackend instance, with its stack
+        DBEmailBackend.instance.send_queryset(queryset)
     send.short_description = "send emails"
 
 
