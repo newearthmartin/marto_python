@@ -2,7 +2,7 @@ import logging
 import math
 import datetime
 from typing import Type, Union
-from datetime import timedelta, date, datetime
+from datetime import timedelta, date, datetime, timezone
 import importlib
 import hashlib
 import warnings
@@ -35,7 +35,7 @@ def add_message(request: HttpRequest, message):
 
 def as_datetime(ts):
     if ts < 0: return None
-    return datetime.utcfromtimestamp(float(ts)).astimezone()
+    return datetime.fromtimestamp(float(ts), timezone.utc).replace(tzinfo=None).astimezone()
 
 
 def as_timestamp(dt: datetime):

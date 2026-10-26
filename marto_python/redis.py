@@ -1,13 +1,21 @@
+from contextlib import contextmanager
+
 from redis import Redis
+from redis.exceptions import LockError
 from django.conf import settings
-from redlock.lock import RedLockFactory
 
 
 __redis = None
-__redlock_factory = None
 
 DEFAULT_REDIS_PORT = 6379
 DEFAULT_REDIS_DB = 0
+DEFAULT_LOCK_TTL = 100 * 1000
+LOCK_WAIT_SECONDS = 0.5
+LOCK_RETRY_SECONDS = 0.1
+
+
+class RedisLockError(Exception):
+    pass
 
 
 def get_redis():
@@ -19,14 +27,23 @@ def get_redis():
     return __redis
 
 
-def redis_lock(lock_name, *args, **kwargs):
-    global __redlock_factory
-    if not __redlock_factory:
-        __redlock_factory = RedLockFactory([{
-            'host': 'localhost',
-            'port': getattr(settings, 'REDIS_PORT', DEFAULT_REDIS_PORT),
-            'db': getattr(settings, 'REDIS_DB', DEFAULT_REDIS_DB)}])
-    return __redlock_factory.create_lock(lock_name, *args, **kwargs)
+@contextmanager
+def redis_lock(lock_name, ttl=DEFAULT_LOCK_TTL):
+    """Hold the Redis lock `lock_name` (expiring after `ttl` ms) for the block.
+
+    Waits briefly for a lock another holder has, then raises RedisLockError.
+    """
+    lock = get_redis().lock(lock_name, timeout=ttl / 1000, blocking_timeout=LOCK_WAIT_SECONDS,
+                            sleep=LOCK_RETRY_SECONDS)
+    if not lock.acquire():
+        raise RedisLockError(f'failed to acquire lock {lock_name}')
+    try:
+        yield
+    finally:
+        try:
+            lock.release()
+        except LockError:  # expired while held; the next holder owns it now
+            pass
 
 
 def get_redis_key(fn, *args, **kwargs):

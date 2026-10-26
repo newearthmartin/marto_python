@@ -11,8 +11,7 @@ from django.core.mail import EmailMessage
 from django.conf import settings
 from django.http import HttpResponseBadRequest, JsonResponse
 from threading import Thread
-from redlock.lock import RedLockError
-from marto_python.redis import get_redis, get_redis_key, get_signature_redis_key, redis_lock
+from marto_python.redis import RedisLockError, get_redis, get_redis_key, get_signature_redis_key, redis_lock
 from marto_python.strings import cut_str
 
 
@@ -67,7 +66,7 @@ def task_only_one(*decorator_args, **decorator_kwargs):
                     finally:
                         if task_id:
                             redis.delete(task_id_key)
-            except RedLockError:
+            except RedisLockError:
                 logger.warning(f'Task {redis_key} already being executed.')
                 active_task_id = get_redis().get(task_id_key)
                 if active_task_id:
