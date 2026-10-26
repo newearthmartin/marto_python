@@ -1,10 +1,13 @@
 import os
+from unittest import skipUnless
 from smtplib import SMTPDataError, SMTPSenderRefused, SMTPServerDisconnected
+import django
 from django.core.mail.backends.base import BaseEmailBackend
 from django.core.mail import EmailMultiAlternatives
 from django.test import TestCase
 from marto_email import models
 from marto_email.backend import DBEmailBackend
+from marto_email.testing import db_layer, mailer_settings
 from marto_python.collection_utils import list2comma_separated
 
 
@@ -13,9 +16,8 @@ DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 class EmailTest(TestCase):
     def test_db_backend(self):
-        with self.settings(EMAIL_BACKEND='marto_email.backend.StackedEmailBackend',
-                           EMAIL_BACKEND_STACK = ['django.core.mail.backends.locmem.EmailBackend',
-                                                  'marto_email.backend.DBEmailBackend']):
+        with self.settings(**mailer_settings(['django.core.mail.backends.locmem.EmailBackend',
+                                              'marto_email.backend.DBEmailBackend'])):
             self.assertEqual(0, models.EmailMessage.objects.count())
             subject = "Test subject"
             body = "Test body"
@@ -38,6 +40,33 @@ class EmailTest(TestCase):
             self.assertEqual(msg.body, msg2.body)
             self.assertEqual(msg.attachments, msg2.attachments)
             self.assertEqual(msg.alternatives, msg2.alternatives)
+
+
+class MailersTest(TestCase):
+    @skipUnless(django.VERSION >= (6, 1), 'MAILERS needs Django 6.1')
+    def test_each_mailer_has_its_own_stack_and_send_immediately(self):
+        FakeSMTPBackend.reset()
+        transport = f'{__name__}.FakeSMTPBackend'
+        with self.settings(**mailer_settings([transport, db_layer(send_immediately=True)],
+                                             newsletters=[transport, db_layer(send_immediately=False)])):
+            EmailMultiAlternatives('s', 'b', 'a@x.com', ['now@x.com']).send()
+            self.assertEqual(['now@x.com'], FakeSMTPBackend.sent)
+            self.assertEqual([True], list(models.EmailMessage.objects.values_list('sent', flat=True)))
+
+            EmailMultiAlternatives('s', 'b', 'a@x.com', ['later@x.com']).send(using='newsletters')
+            self.assertEqual(['now@x.com'], FakeSMTPBackend.sent)
+            self.assertEqual(1, models.EmailMessage.objects.filter(to='later@x.com', sent=False).count())
+
+            DBEmailBackend.instance.send_all()
+            self.assertEqual(['now@x.com', 'later@x.com'], FakeSMTPBackend.sent)
+
+    def test_send_immediately_option_beats_the_setting(self):
+        FakeSMTPBackend.reset()
+        with self.settings(EMAIL_DB_SEND_IMMEDIATELY=True,
+                           **mailer_settings([f'{__name__}.FakeSMTPBackend', db_layer(send_immediately=False)])):
+            EmailMultiAlternatives('s', 'b', 'a@x.com', ['x@x.com']).send()
+        self.assertEqual([], FakeSMTPBackend.sent)
+        self.assertEqual(1, models.EmailMessage.objects.filter(sent=False).count())
 
 
 class FakeSMTPBackend(BaseEmailBackend):
@@ -92,9 +121,7 @@ class FakeSMTPBackend(BaseEmailBackend):
 class DoSendConnectionTest(TestCase):
     def send_all(self, n, **kw):
         FakeSMTPBackend.reset(**kw)
-        with self.settings(EMAIL_BACKEND='marto_email.backend.StackedEmailBackend',
-                           EMAIL_DB_SEND_IMMEDIATELY=False,
-                           EMAIL_BACKEND_STACK=[f'{__name__}.FakeSMTPBackend', 'marto_email.backend.DBEmailBackend']):
+        with self.settings(**mailer_settings([f'{__name__}.FakeSMTPBackend', db_layer(send_immediately=False)])):
             for i in range(n):
                 EmailMultiAlternatives('s', 'b', 'a@x.com', [f'u{i}@x.com']).send()
             self.assertEqual(0, len(FakeSMTPBackend.sent))
@@ -121,9 +148,7 @@ class DoSendConnectionTest(TestCase):
 
     def test_row_sent_meanwhile_by_another_process_is_skipped(self):
         FakeSMTPBackend.reset()
-        with self.settings(EMAIL_BACKEND='marto_email.backend.StackedEmailBackend',
-                           EMAIL_DB_SEND_IMMEDIATELY=False,
-                           EMAIL_BACKEND_STACK=[f'{__name__}.FakeSMTPBackend', 'marto_email.backend.DBEmailBackend']):
+        with self.settings(**mailer_settings([f'{__name__}.FakeSMTPBackend', db_layer(send_immediately=False)])):
             for i in range(3):
                 EmailMultiAlternatives('s', 'b', 'a@x.com', [f'u{i}@x.com']).send()
             emails = list(models.EmailMessage.objects.order_by('id'))

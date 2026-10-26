@@ -9,6 +9,7 @@ from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused, SMTP
 
 import django
 from django.conf import settings
+from django.core import mail
 from django.db import transaction
 from django.db.models import QuerySet, Manager
 from django.utils import timezone
@@ -25,16 +26,19 @@ logger = logging.getLogger(__name__)
 CONNECTION_ATTR = '_connection' if django.VERSION >= (6, 0) else 'connection'
 
 
+def default_connection():
+    """A connection of the default mailer, which creates its backends (Django 6.1 deprecates get_connection())."""
+    return mail.mailers.default if hasattr(mail, 'mailers') else mail.get_connection()
+
+
 class DecoratorBackend(BaseEmailBackend):
     """Abstract class for decorators to add functionality to EmailBackend in a decorator pattern"""
     inner_backend = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, inner_backend=None, inner_backend_class=None, **kwargs):
         super().__init__(*args, **kwargs)
-        backend_instance = kwargs.get('inner_backend')
-        backend_class = kwargs.get('inner_backend_class')
-        if backend_instance: self.set_inner_backend(backend_instance)
-        elif backend_class: self.set_inner_backend_class(backend_class)
+        if inner_backend: self.set_inner_backend(inner_backend)
+        elif inner_backend_class: self.set_inner_backend_class(inner_backend_class)
 
     def set_inner_backend(self, backend):
         self.inner_backend = backend
@@ -56,19 +60,30 @@ class DecoratorBackend(BaseEmailBackend):
 
 
 class StackedEmailBackend(DecoratorBackend):
-    def __init__(self, *args, **kwargs):
+    """
+    Builds a chain of backends, innermost (the transport) first. `stack` is the mailer's own list of
+    `{'BACKEND': dotted path, 'OPTIONS': {...}}` entries (a bare dotted path also works), so each MAILERS
+    alias can have its own; without it, the global EMAIL_BACKEND_STACK is used (Django before 6.1).
+    """
+    def __init__(self, *args, stack=None, **kwargs):
         inner_backend = None
-        for backend_class_name in settings.EMAIL_BACKEND_STACK:
-            backend_class = load_class(backend_class_name)
-            inner_backend = backend_class(*args, inner_backend=inner_backend, **kwargs)
+        for layer in settings.EMAIL_BACKEND_STACK if stack is None else stack:
+            if isinstance(layer, str):
+                layer = {'BACKEND': layer}
+            backend_class = load_class(layer['BACKEND'])
+            # the transport (the innermost) is Django's own backend, which has no inner one
+            chained = {'inner_backend': inner_backend} if inner_backend else {}
+            inner_backend = backend_class(*args, **chained, **layer.get('OPTIONS', {}), **kwargs)
         super().__init__(*args, inner_backend=inner_backend, **kwargs)
 
 
 class DBEmailBackend(DecoratorBackend):
     instance = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, send_immediately=None, **kwargs):
+        """`send_immediately` False only stores the emails, for a later `send_all`; None is EMAIL_DB_SEND_IMMEDIATELY."""
         super().__init__(*args, **kwargs)
+        self.send_immediately = send_immediately
         DBEmailBackend.instance = self
         if not self.inner_backend:
             class_name = setting('EMAIL_DB_INNER_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
@@ -115,7 +130,10 @@ class DBEmailBackend(DecoratorBackend):
         db_emails = [DBEmailBackend.django_message_to_db_email(m) for m in email_messages]
         for email in db_emails:
             email.save()
-        if not setting('EMAIL_DB_SEND_IMMEDIATELY', True):
+        send_immediately = self.send_immediately
+        if send_immediately is None:
+            send_immediately = setting('EMAIL_DB_SEND_IMMEDIATELY', True)
+        if not send_immediately:
             logger.info(f'Stored {len(db_emails)} emails for sending later')
             return
         logger.debug('Sending emails now')
