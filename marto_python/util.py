@@ -35,7 +35,7 @@ def add_message(request: HttpRequest, message):
 
 def as_datetime(ts):
     if ts < 0: return None
-    return datetime.fromtimestamp(float(ts), timezone.utc).replace(tzinfo=None).astimezone()
+    return datetime.fromtimestamp(float(ts), timezone.utc).astimezone()
 
 
 def as_timestamp(dt: datetime):
