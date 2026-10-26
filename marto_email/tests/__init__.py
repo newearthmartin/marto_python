@@ -1,5 +1,7 @@
 import os
+from unittest import skipUnless
 from smtplib import SMTPDataError, SMTPSenderRefused, SMTPServerDisconnected
+import django
 from django.core.mail.backends.base import BaseEmailBackend
 from django.core.mail import EmailMultiAlternatives
 from django.test import TestCase
@@ -41,6 +43,7 @@ class EmailTest(TestCase):
 
 
 class MailersTest(TestCase):
+    @skipUnless(django.VERSION >= (6, 1), 'MAILERS needs Django 6.1')
     def test_each_mailer_has_its_own_stack_and_send_immediately(self):
         FakeSMTPBackend.reset()
         transport = f'{__name__}.FakeSMTPBackend'
@@ -56,6 +59,14 @@ class MailersTest(TestCase):
 
             DBEmailBackend.instance.send_all()
             self.assertEqual(['now@x.com', 'later@x.com'], FakeSMTPBackend.sent)
+
+    def test_send_immediately_option_beats_the_setting(self):
+        FakeSMTPBackend.reset()
+        with self.settings(EMAIL_DB_SEND_IMMEDIATELY=True,
+                           **mailer_settings([f'{__name__}.FakeSMTPBackend', db_layer(send_immediately=False)])):
+            EmailMultiAlternatives('s', 'b', 'a@x.com', ['x@x.com']).send()
+        self.assertEqual([], FakeSMTPBackend.sent)
+        self.assertEqual(1, models.EmailMessage.objects.filter(sent=False).count())
 
 
 class FakeSMTPBackend(BaseEmailBackend):

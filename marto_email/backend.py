@@ -9,6 +9,7 @@ from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused, SMTP
 
 import django
 from django.conf import settings
+from django.core import mail
 from django.db import transaction
 from django.db.models import QuerySet, Manager
 from django.utils import timezone
@@ -23,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 # Django 6 renamed the message's connection attribute (the public one is deprecated)
 CONNECTION_ATTR = '_connection' if django.VERSION >= (6, 0) else 'connection'
+
+
+def default_connection():
+    """A connection of the default mailer, which creates its backends (Django 6.1 deprecates get_connection())."""
+    return mail.mailers.default if hasattr(mail, 'mailers') else mail.get_connection()
 
 
 class DecoratorBackend(BaseEmailBackend):
@@ -57,11 +63,11 @@ class StackedEmailBackend(DecoratorBackend):
     """
     Builds a chain of backends, innermost (the transport) first. `stack` is the mailer's own list of
     `{'BACKEND': dotted path, 'OPTIONS': {...}}` entries (a bare dotted path also works), so each MAILERS
-    alias can have its own.
+    alias can have its own; without it, the global EMAIL_BACKEND_STACK is used (Django before 6.1).
     """
-    def __init__(self, *args, stack, **kwargs):
+    def __init__(self, *args, stack=None, **kwargs):
         inner_backend = None
-        for layer in stack:
+        for layer in settings.EMAIL_BACKEND_STACK if stack is None else stack:
             if isinstance(layer, str):
                 layer = {'BACKEND': layer}
             backend_class = load_class(layer['BACKEND'])
@@ -74,11 +80,14 @@ class StackedEmailBackend(DecoratorBackend):
 class DBEmailBackend(DecoratorBackend):
     instance = None
 
-    def __init__(self, *args, send_immediately=True, **kwargs):
-        """`send_immediately` False only stores the emails, for a later `send_all`."""
+    def __init__(self, *args, send_immediately=None, **kwargs):
+        """`send_immediately` False only stores the emails, for a later `send_all`; None is EMAIL_DB_SEND_IMMEDIATELY."""
         super().__init__(*args, **kwargs)
         self.send_immediately = send_immediately
         DBEmailBackend.instance = self
+        if not self.inner_backend:
+            class_name = setting('EMAIL_DB_INNER_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+            self.set_inner_backend_class(class_name)
 
     @staticmethod
     def django_message_to_db_email(message):
@@ -121,7 +130,10 @@ class DBEmailBackend(DecoratorBackend):
         db_emails = [DBEmailBackend.django_message_to_db_email(m) for m in email_messages]
         for email in db_emails:
             email.save()
-        if not self.send_immediately:
+        send_immediately = self.send_immediately
+        if send_immediately is None:
+            send_immediately = setting('EMAIL_DB_SEND_IMMEDIATELY', True)
+        if not send_immediately:
             logger.info(f'Stored {len(db_emails)} emails for sending later')
             return
         logger.debug('Sending emails now')
