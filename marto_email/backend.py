@@ -7,6 +7,7 @@ import pickle
 from smtplib import SMTPDataError, SMTPConnectError, SMTPRecipientsRefused, SMTPResponseException, \
     SMTPServerDisconnected
 
+import django
 from django.conf import settings
 from django.db import transaction
 from django.db.models import QuerySet, Manager
@@ -19,6 +20,9 @@ from marto_python.util import get_full_class, load_class, setting
 from marto_python.collection_utils import list2comma_separated
 
 logger = logging.getLogger(__name__)
+
+# Django 6 renamed the message's connection attribute (the public one is deprecated)
+CONNECTION_ATTR = '_connection' if django.VERSION >= (6, 0) else 'connection'
 
 
 class DecoratorBackend(BaseEmailBackend):
@@ -82,7 +86,7 @@ class DBEmailBackend(DecoratorBackend):
         email.email_class = get_full_class(message)
 
         msg_dict = message.__dict__.copy()
-        msg_dict.pop('connection')
+        msg_dict.pop(CONNECTION_ATTR, None)
         binary_dict = {}
         if message.attachments:
             binary_dict['attachments'] = message.attachments
@@ -103,6 +107,7 @@ class DBEmailBackend(DecoratorBackend):
             if attachments := binary_dict.get('attachments', None): msg_dict['attachments'] = attachments
             if alternatives := binary_dict.get('alternatives', None): msg_dict['alternatives'] = alternatives
         message = load_class(email.email_class)()
+        msg_dict.setdefault(CONNECTION_ATTR, None)  # a dump made under the other Django version has none
         message.__dict__ = msg_dict
         return message
 
