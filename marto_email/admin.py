@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import admin
+from django.core import mail
 from django.contrib.admin.options import ModelAdmin
 from django.contrib.admin.widgets import AdminTextInputWidget
 from tinymce.widgets import TinyMCE
@@ -43,7 +44,8 @@ class EmailMessageAdmin(ModelAdmin):
         for email in queryset.all():
             if email.sent and not email.send_successful:
                 email.clear_sent()
-        DBEmailBackend().send_queryset(queryset)
+        mail.mailers.default  # creates the DBEmailBackend instance, with its stack
+        DBEmailBackend.instance.send_queryset(queryset)
     send.short_description = "send emails"
 
 

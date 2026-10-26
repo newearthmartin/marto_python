@@ -1,6 +1,7 @@
 import logging
 from django_extensions.management.jobs import HourlyJob
-from marto_email.backend import DBEmailBackend, default_connection
+from django.core import mail
+from marto_email.backend import DBEmailBackend
 from marto_python.util import setting, load_class
 logger = logging.getLogger(__name__)
 
@@ -10,7 +11,7 @@ class Job(HourlyJob):
 
     def execute(self):
         logger.info('Telling db backend to send emails...')
-        default_connection()  # creates the DBEmailBackend instance
+        mail.mailers.default  # creates the DBEmailBackend instance
         if not DBEmailBackend.instance:
             logger.warning('DBEmailBackend is not instantiated')
             return
