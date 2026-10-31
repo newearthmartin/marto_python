@@ -318,7 +318,7 @@ def monit(c):
 
 
 @task
-def frontend_build(c):
+def frontend(c):
     """
     Build frontend
     """
