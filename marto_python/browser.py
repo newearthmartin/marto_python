@@ -100,6 +100,14 @@ async def new_page(browser, page_func, console_listener=None, grant_permissions=
             logger.warning(f'Exception while closing context: {first_line(str(e))}')
 
 
+async def run_script_on_page(browser, page_url, script, gc=True, log_console=False, logger_extra=None) -> FetchResult:
+    """Loads a page and runs a script on it, then frees the browser's memory."""
+    rv = await run_on_page(browser, page_url, lambda page: page.evaluate(script),
+                           log_console=log_console, logger_extra=logger_extra)
+    if gc: await browser_gc(browser, logger_extra=logger_extra)
+    return rv
+
+
 async def run_on_page(browser, page_url, page_func, console_listener=None, log_console=False,
                       log_console_only_error=False, logger_extra=None, grant_permissions=None) -> FetchResult:
     async def fn(page):
