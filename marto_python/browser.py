@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class BrowserFetchError(StrEnum):
-    HTTP_4XX = 'http_4xx'                        # 4xx (except 429) — page not reachable / forbidden / gone
+    HTTP_4XX = 'http_4xx'                        # 4xx (except 403, 429) — page not reachable / gone
+    HTTP_403 = 'http_403'                        # 403 — the site refuses us (bot protection), the page exists
     HTTP_5XX = 'http_5xx'                        # 5xx — server error
     TOO_MANY_REQUESTS = 'too_many_requests'      # 429 — transient, treated separately from 4xx
     TIMEOUT = 'timeout'                          # navigation/operation timed out
@@ -119,6 +120,8 @@ async def run_on_page(browser, page_url, page_func, console_listener=None, log_c
         if status != 200:
             if status == 429:
                 error = BrowserFetchError.TOO_MANY_REQUESTS
+            elif status == 403:
+                error = BrowserFetchError.HTTP_403
             elif 400 <= status < 500:
                 error = BrowserFetchError.HTTP_4XX
             elif 500 <= status < 600:
