@@ -15,7 +15,7 @@ from django.db.models import QuerySet, Manager
 from django.utils import timezone
 from django.core.mail.backends.base import BaseEmailBackend
 
-from marto_email.models import EmailMessage, MAX_FROM_SIZE, MAX_SUBJECT_SIZE
+from marto_email.models import EmailMessage, MutedAddress, MAX_FROM_SIZE, MAX_SUBJECT_SIZE
 from marto_python.strings import cut_str
 from marto_python.util import get_full_class, load_class, setting
 from marto_python.collection_utils import list2comma_separated
@@ -57,6 +57,38 @@ class DecoratorBackend(BaseEmailBackend):
     def close(self):
         if self.inner_backend:
             self.inner_backend.close()
+
+
+class MutedAddressesEmailBackend(DecoratorBackend):
+    """Drops the addresses in the `MutedAddress` registry from every message (the ADMINS are never dropped),
+    and the messages left without a recipient."""
+    def send_messages(self, email_messages):
+        admin_addresses = {address.lower() for name, address in settings.ADMINS}
+        muted = None
+        emails_ok = []
+        muted_count = 0
+        for email in email_messages:
+            recipients = [*email.to, *email.cc, *email.bcc]
+            if any(address.lower() not in admin_addresses for address in recipients):
+                if muted is None:
+                    muted = set(MutedAddress.objects.values_list('address', flat=True))
+                email.to, email.cc, email.bcc = (
+                    [address for address in addresses if self._allowed(address, muted)]
+                    for addresses in (email.to, email.cc, email.bcc))
+            if email.to or email.cc or email.bcc:
+                emails_ok.append(email)
+            else:
+                muted_count += 1
+        if muted_count > 0:
+            logger.info(f'Muted {muted_count} emails')
+        super().send_messages(emails_ok)
+
+    @staticmethod
+    def _allowed(address, muted):
+        if address.lower() not in muted:
+            return True
+        logger.info(f'Preventing an email to address {address}')
+        return False
 
 
 class StackedEmailBackend(DecoratorBackend):

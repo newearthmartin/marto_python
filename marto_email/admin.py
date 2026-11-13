@@ -6,7 +6,7 @@ from tinymce.widgets import TinyMCE
 
 from marto_python.admin import YesNoFilter
 from .management.commands.clean_error_emails import filter_error_emails
-from .models import EmailMessage
+from .models import EmailMessage, MutedAddress
 from .backend import DBEmailBackend, default_connection
 
 
@@ -49,3 +49,11 @@ class EmailMessageAdmin(ModelAdmin):
 
 
 admin.site.register(EmailMessage, EmailMessageAdmin)
+
+
+class MutedAddressAdmin(ModelAdmin):
+    list_display = ['address', 'reason', 'created_on']
+    search_fields = ['address', 'reason']
+
+
+admin.site.register(MutedAddress, MutedAddressAdmin)

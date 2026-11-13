@@ -35,6 +35,21 @@ class EmailMessage(models.Model):
         self.save()
 
 
+class MutedAddress(models.Model):
+    """An address that is never mailed (a bounce, a complaint, a request): the muting backend drops it from every
+    message. Stored lower-case. It is about the address; muting an account is the app's own business."""
+    address = models.EmailField(unique=True)
+    reason = models.CharField(max_length=256, blank=True)
+    created_on = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        self.address = self.address.strip().lower()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.address
+
+
 class EmailConfirmationMixin(models.Model):
     """ For mixing into the UserProfile model """
     class Meta:

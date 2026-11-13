@@ -2,6 +2,7 @@ import os
 from unittest import skipUnless
 from smtplib import SMTPDataError, SMTPSenderRefused, SMTPServerDisconnected
 import django
+from django.core import mail
 from django.core.mail.backends.base import BaseEmailBackend
 from django.core.mail import EmailMultiAlternatives
 from django.test import TestCase
@@ -182,3 +183,25 @@ class DoSendConnectionTest(TestCase):
     def test_permanent_data_error_marks_email_failed(self):
         self.send_all(3, errors={2: SMTPDataError(554, b'rejected')})
         self.assertEqual([(True, True), (True, False), (True, True)], self.states())
+
+
+class MutedAddressesBackendTest(TestCase):
+    STACK = ['django.core.mail.backends.locmem.EmailBackend', 'marto_email.backend.MutedAddressesEmailBackend']
+
+    def send(self, to, cc=()):
+        EmailMultiAlternatives(subject='s', body='b', from_email='from@multilanguage.xyz', to=list(to), cc=list(cc)).send()
+
+    def test_a_muted_address_is_dropped_whatever_its_case(self):
+        models.MutedAddress.objects.create(address='  Muted@Example.com ')
+        self.assertEqual('muted@example.com', models.MutedAddress.objects.get().address)
+        with self.settings(**mailer_settings(self.STACK)):
+            self.send(['MUTED@example.com', 'ok@example.com'], cc=['muted@example.com'])
+            self.send(['muted@example.com'])
+        self.assertEqual(1, len(mail.outbox))
+        self.assertEqual((['ok@example.com'], []), (mail.outbox[0].to, mail.outbox[0].cc))
+
+    def test_admins_are_never_dropped(self):
+        models.MutedAddress.objects.create(address='admin@example.com')
+        with self.settings(ADMINS=[('Admin', 'admin@example.com')], **mailer_settings(self.STACK)):
+            self.send(['admin@example.com'])
+        self.assertEqual(1, len(mail.outbox))
