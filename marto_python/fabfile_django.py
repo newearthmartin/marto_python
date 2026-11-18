@@ -81,6 +81,7 @@ def push(c):
     conn.local(f'git push origin {main_branch}')
     with app_prefix(c, conn):
         conn.run('git pull')
+        conn.run('git submodule sync --recursive')
         conn.run('git submodule update --init --recursive')
 
 
