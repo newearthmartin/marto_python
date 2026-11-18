@@ -188,10 +188,15 @@ NETWORK_MARKERS = [
     'net::ERR_ADDRESS_UNREACHABLE',
     'net::ERR_NAME_NOT_RESOLVED',
     'net::ERR_CONNECTION_CLOSED',
+    'net::ERR_CONNECTION_RESET',
     'net::ERR_CERT_COMMON_NAME_INVALID',
     'net::ERR_CERT_AUTHORITY_INVALID',
     'net::ERR_CERT_DATE_INVALID',
     'net::ERR_TOO_MANY_REDIRECTS',
+]
+# Network errors that are often transient, so worth one retry before reporting NETWORK.
+NETWORK_RETRY_MARKERS = [
+    'net::ERR_CONNECTION_RESET',
 ]
 # Raised deliberately by our own injected scripts (e.g. common_ml's setup.js) when they detect
 # they've been tampered with or otherwise blocked from running properly - not a bug in our code,
@@ -223,8 +228,9 @@ async def catch_browser_errors(run_fn, retry=True, logger_extra=None) -> FetchRe
             logger.warning(first_line(str_e), extra=logger_extra)
             return FetchResult(error=BrowserFetchError.TIMEOUT)
         elif any(m in str_e for m in NETWORK_MARKERS):
-            logger.warning(first_line(str_e), extra=logger_extra)
-            return FetchResult(error=BrowserFetchError.NETWORK)
+            will_retry = retry and any(m in str_e for m in NETWORK_RETRY_MARKERS)
+            logger.warning(first_line(str_e) + (retry_msg if will_retry else ''), extra=logger_extra)
+            return await retry_fn() if will_retry else FetchResult(error=BrowserFetchError.NETWORK)
         elif any(m in str_e for m in CODE_TAMPERED_MARKERS):
             logger.warning(str_e, extra=logger_extra)
             return FetchResult(error=BrowserFetchError.CODE_TAMPERED)
