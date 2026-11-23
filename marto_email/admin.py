@@ -4,7 +4,7 @@ from django.contrib.admin.options import ModelAdmin
 from django.contrib.admin.widgets import AdminTextInputWidget
 from tinymce.widgets import TinyMCE
 
-from marto_python.admin import YesNoFilter
+from marto_python.admin import FieldsTextInputFilter, YesNoFilter
 from .management.commands.clean_error_emails import filter_error_emails
 from .models import EmailMessage, MutedAddress
 from .backend import DBEmailBackend, default_connection
@@ -32,11 +32,40 @@ class ErrorsFilter(YesNoFilter):
         return filter_error_emails(queryset, filter_not_exclude=is_yes)
 
 
+class DestinationFilter(FieldsTextInputFilter):
+    title = 'destination'
+    parameter_name = 'destination'
+    placeholder = 'to, cc or bcc'
+    fields = ('to', 'cc', 'bcc')
+
+
+class FromFilter(FieldsTextInputFilter):
+    title = 'from'
+    parameter_name = 'from'
+    placeholder = 'from'
+    fields = ('from_email',)
+
+
+class SubjectFilter(FieldsTextInputFilter):
+    title = 'subject'
+    parameter_name = 'subject'
+    placeholder = 'subject'
+    fields = ('subject',)
+
+
+class BodyFilter(FieldsTextInputFilter):
+    title = 'body'
+    parameter_name = 'body'
+    placeholder = 'body'
+    fields = ('body',)
+
+
 class EmailMessageAdmin(ModelAdmin):
     form = EmailMessageAdminForm
     list_display = ['to', 'subject', 'sent', 'send_successful', 'fail_message', 'created_on', 'sent_on']
-    list_filter = ['sent', 'send_successful', ErrorsFilter, 'created_on', 'sent_on']
-    search_fields = ['from_email', 'to', 'cc', 'bcc', 'subject', 'body', 'fail_message']
+    # text filters instead of search_fields: a search box ORs icontains over every column, body included, which is slow
+    list_filter = [DestinationFilter, FromFilter, SubjectFilter, BodyFilter,
+                   'sent', 'send_successful', ErrorsFilter, 'created_on', 'sent_on']
     actions = ['send']
 
     def send(self, _, queryset):
