@@ -109,7 +109,7 @@ def debounce_task(sig, seconds=60, debounced=False):
     signature(sig).apply_async()
 
 
-def throttle_task(sig, seconds=60):
+def throttle_task(sig, seconds=60, leading=False):
     """Run `sig` at most once per `seconds`, and always run it.
 
     The difference from debounce_task: a call arriving while a run is already pending is dropped,
@@ -119,25 +119,48 @@ def throttle_task(sig, seconds=60):
     window and schedules the run at the end of it, so everything that arrives during the window is
     covered by that one run and costs nothing.
 
-    Returns True if this call claimed the window.
+    `leading`: the first call, with no window open, runs `sig` at once instead. A call inside the window
+    schedules one run for the end of it, which covers every call that follows, and the window then
+    extends to `seconds` after that run, so a steady stream of calls is one run per `seconds`; a lone
+    call after a quiet period runs at once.
+
+    Returns True if this call claimed the window (and, with `leading`, ran).
     """
     if type(sig) is not dict:  # same signature in the sync and async call, as debounce_task does
         sig = json.loads(json.dumps(sig))
 
-    log_key = cut_str('throttle.' + get_signature_redis_key(sig), 200)
+    redis_key = 'throttle.' + get_signature_redis_key(sig)
+    log_key = cut_str(redis_key, 200)
     if seconds == 0:
         logger.debug(f'throttle - seconds is 0 - executing immediately - {log_key}')
         signature(sig).apply_async()
         return True
 
+    redis = get_redis()
     # The key expires when the run is due, so the next caller after that opens a fresh window.
-    if not get_redis().set('throttle.' + get_signature_redis_key(sig), 1, nx=True, ex=seconds):
+    if redis.set(redis_key, 1, nx=True, ex=seconds):
+        if leading:
+            logger.info(f'throttle - running now, next in {seconds} secs - {log_key}')
+            signature(sig).apply_async()
+        else:
+            logger.info(f'throttle - running in {seconds} secs - {log_key}')
+            signature(sig).apply_async(countdown=seconds)
+        return True
+
+    if not leading:
         logger.debug(f'throttle - already scheduled - {log_key}')
         return False
 
-    logger.info(f'throttle - running in {seconds} secs - {log_key}')
-    signature(sig).apply_async(countdown=seconds)
-    return True
+    remaining = redis.ttl(redis_key)
+    if remaining < 1:  # the window ended between the two calls: this one opens the next
+        return throttle_task(sig, seconds, leading)
+    if redis.set(redis_key + '.trailing', 1, nx=True, ex=remaining):
+        logger.info(f'throttle - running in {remaining} secs, at the end of the window - {log_key}')
+        signature(sig).apply_async(countdown=remaining)
+        redis.expire(redis_key, remaining + seconds)  # the run is one of the window's: the next comes `seconds` after it
+    else:
+        logger.debug(f'throttle - already scheduled - {log_key}')
+    return False
 
 
 class CeleryOrThread:
